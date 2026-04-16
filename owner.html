@@ -68,10 +68,7 @@
 
             <div class="table-header-flex">
                 <h3 data-en="Recent Sessions" data-ar="أحدث الجلسات">Recent Sessions</h3>
-                <div style="display:flex; gap:0.5rem;">
-                    <button id="repair-sync-btn" class="btn-reset-outline" style="border-color:var(--ps-blue); color:var(--ps-blue);" data-en="Repair Sync" data-ar="إصلاح المزامنة">Repair Sync</button>
-                    <button id="pre-reset-btn" class="btn-reset-outline" data-en="Reset Records" data-ar="مسح السجل">Reset Records</button>
-                </div>
+                <button id="pre-reset-btn" class="btn-reset-outline" data-en="Reset Records" data-ar="مسح السجل">Reset Records</button>
             </div>
 
             <div class="table-container">
@@ -149,12 +146,6 @@
         }
         document.getElementById('lang-toggle').onclick = () => { currentLang=currentLang==='en'?'ar':'en'; localStorage.setItem('ps-lang',currentLang); init(); };
         document.getElementById('pre-reset-btn').onclick = () => document.getElementById('reset-confirm-modal').style.display='flex';
-        document.getElementById('repair-sync-btn').onclick = () => {
-            if(confirm("This will clear the pending sync queue. Are you sure?")) {
-                localStorage.removeItem('ps-pending');
-                alert("Sync queue cleared. Refresh the dashboard to apply changes.");
-            }
-        };
         document.querySelectorAll('.close-trigger').forEach(b => b.onclick = () => document.getElementById('reset-confirm-modal').style.display='none');
         document.getElementById('final-reset-btn').onclick = () => { localStorage.clear(); location.reload(); };
         init();

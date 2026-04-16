@@ -66,6 +66,10 @@
         ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; border: 2px solid var(--bg-card); background-clip: content-box; }
         ::-webkit-scrollbar-thumb:hover { background: var(--ps-blue); }
         * { scrollbar-width: thin; scrollbar-color: #444 transparent; }
+        .sync-indicator { position: fixed; bottom: 10px; right: 10px; font-size: 0.7rem; color: #666; display: flex; align-items: center; gap: 5px; z-index: 9999; pointer-events: none; }
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
+        .sync-dot.online { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        .sync-dot.offline { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
     </style>
 </head>
 <body>
@@ -142,6 +146,10 @@
             +20 1065232774
         </a>
     </footer>
+    <div class="sync-indicator">
+        <div id="sync-dot" class="sync-dot"></div>
+        <span id="sync-status-text">Network Ready</span>
+    </div>
 
     <script>
         const CONFIG = {
@@ -171,9 +179,18 @@
             }
             init() {
                 this.setupEventListeners(); this.updateLanguageUI(); this.renderDashboard();
-                setInterval(() => this.updateTimers(), 1000); setInterval(() => this.flushQueue(), 3600000);
-                window.addEventListener('online', () => this.flushQueue());
+                setInterval(() => this.updateTimers(), 1000); 
+                setInterval(() => this.flushQueue(), 30000); // 30 second heartbeat
+                window.addEventListener('online', () => this.updateNetworkStatus(true));
+                window.addEventListener('offline', () => this.updateNetworkStatus(false));
                 setTimeout(() => {this.flushQueue(); document.getElementById('loading-overlay').style.display='none';}, 800);
+                this.updateNetworkStatus(navigator.onLine);
+            }
+            updateNetworkStatus(online) {
+                const dot = document.getElementById('sync-dot');
+                const txt = document.getElementById('sync-status-text');
+                if(online) { dot.className='sync-dot online'; txt.textContent='System Online'; }
+                else { dot.className='sync-dot offline'; txt.textContent='Offline Mode'; }
             }
             updateLanguageUI() {
                 document.documentElement.dir = this.currentLang === 'ar' ? 'rtl' : 'ltr';
@@ -265,7 +282,6 @@
                             price: this.config.foodItems.find(f=>f.id===id).price 
                         }));
                         
-                        // v3.2 DEEP AUDIT: Re-calculate totals on the fly for maximum integrity
                         const elap = this.calculateElapsed(session.startTime);
                         const gamingCalc = session.gamingTotal || (st ? (st.pricePerHour/60)*elap.mins : 0);
                         const foodCalc = this.calculateFoodTotal(session);
@@ -281,13 +297,20 @@
                             gamingTotal: Number(gamingCalc || 0).toFixed(2),
                             foodTotal: Number(foodCalc || 0).toFixed(2),
                             grandTotal: Number((gamingCalc + foodCalc) || 0).toFixed(2),
-                            foodItems: items
+                            foodItems: items,
+                            auditStartTime: session.realStartTime || session.startTime || new Date().toISOString()
                         };
 
-                        console.log('Syncing Payload (v3.1):', payload);
+                        console.log('--- SYNCING RECORD v3.8 ---');
+                        console.table(payload);
+                        
                         await fetch(url, { method:'POST', mode:'no-cors', body:JSON.stringify(payload) });
                         this.pendingSync = this.pendingSync.filter(x => x.id !== session.id);
-                    } catch (e) { console.warn('Sync delayed', e); }
+                        document.getElementById('sync-status-text').textContent = 'Last Sync: ' + new Date().toLocaleTimeString();
+                    } catch (e) { 
+                        console.warn('Sync delayed', e); 
+                        document.getElementById('sync-dot').className='sync-dot offline';
+                    }
                 }
                 localStorage.setItem('ps-pending', JSON.stringify(this.pendingSync));
             }
@@ -302,7 +325,8 @@
                 document.getElementById('confirm-start').onclick = () => {
                     const custName = document.getElementById('cust-name-input').value || "Guest";
                     const [h,m] = document.getElementById('start-time-input').value.split(':'); const d = new Date(); d.setHours(h,m,0,0);
-                    this.activeSessions.push({ id:Date.now(), stationId:this.selectedSlot.sid, slotNumber:this.selectedSlot.sl, startTime:d.toISOString(), foodCart:{}, custName });
+                    const realStartTime = new Date().toISOString(); 
+                    this.activeSessions.push({ id:Date.now(), stationId:this.selectedSlot.sid, slotNumber:this.selectedSlot.sl, startTime:d.toISOString(), realStartTime, foodCart:{}, custName });
                     this.saveState(); this.renderDashboard(); document.getElementById('start-modal').style.display='none';
                 };
                 document.getElementById('update-start-btn').onclick = () => {
@@ -332,7 +356,8 @@
                         duration: elap.formatted, 
                         gamingTotal: Math.round(g*100)/100, 
                         foodTotal: Math.round(f*100)/100, 
-                        grandTotal: Math.round((g+f)*100)/100 
+                        grandTotal: Math.round((g+f)*100)/100,
+                        realStartTime: s.realStartTime || s.startTime || now.toISOString()
                     };
                     this.completedSessions.push(record); this.activeSessions = this.activeSessions.filter(x=>x.id!==s.id); this.pendingSync.push(record);
                     this.saveState(); localStorage.setItem('ps-pending', JSON.stringify(this.pendingSync));
