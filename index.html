@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PS Cafe Manager v1</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loading-overlay" class="modal-overlay" style="display: flex;">
+        <div class="ps-logo-circle" style="animation: pulse 1.5s infinite"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo-area">
+                <div class="ps-logo-circle"></div>
+                <h1>PS Cafe</h1>
+            </div>
+            <div class="controls">
+                <button id="lang-toggle" class="btn-toggle">العربية</button>
+            </div>
+        </header>
+
+        <main id="dashboard" class="dashboard">
+            <!-- Dynamically populated station sections and slot grids -->
+        </main>
+    </div>
+
+    <!-- START SESSION MODAL -->
+    <div id="start-modal" class="modal-overlay">
+        <div class="modal">
+            <h2 data-en="Start Session" data-ar="بدء جلسة">Start Session</h2>
+            <div id="start-slot-info" style="margin: 1rem 0; color: var(--ps-blue); font-weight: 800;">
+                <!-- Pre-filled Station/Slot info -->
+            </div>
+            
+            <div class="input-group">
+                <label data-en="Customer Name (Optional)" data-ar="اسم الزبون (اختياري)">Customer Name (Optional)</label>
+                <input type="text" id="cust-name-input" placeholder="...">
+            </div>
+
+            <div class="input-group">
+                <label data-en="Start Time" data-ar="وقت البدء">Start Time</label>
+                <input type="time" id="start-time-input">
+            </div>
+
+            <div class="session-actions" style="margin-top: 2rem; display: flex; gap: 1rem;">
+                <button id="confirm-start" class="btn-toggle" style="background: var(--ps-blue); flex: 2;" data-en="Start Now" data-ar="ابدأ الآن">Start Now</button>
+                <button class="btn-toggle close-trigger" style="flex: 1;" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANAGE SESSION MODAL (Edit/End/Food) -->
+    <div id="manage-modal" class="modal-overlay">
+        <div class="modal">
+            <h2 data-en="Manage Session" data-ar="إدارة الجلسة">Manage Session</h2>
+            <div id="manage-slot-info" style="margin: 0.5rem 0; color: var(--ps-amber); font-weight: 800; font-size: 0.9rem;"></div>
+            
+            <div id="active-timer-display" class="session-timer" style="text-align: center; font-size: 2.5rem; margin: 1rem 0;">00:00:00</div>
+
+            <div class="input-group">
+                <label data-en="Edit Start Time" data-ar="تعديل وقت البدء">Edit Start Time</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="time" id="edit-start-time-input" style="flex: 1;">
+                    <button id="update-start-btn" class="btn-toggle" style="padding: 0 1rem;" data-en="Update" data-ar="تحديث">Update</button>
+                </div>
+            </div>
+
+            <!-- Food Section (Collapsible) -->
+            <div class="food-section">
+                <button id="toggle-food" class="btn-toggle" style="width: 100%; display: flex; justify-content: space-between; align-items: center;" data-en="Add Food/Drinks" data-ar="إضافة مشروبات وأكل">
+                    <span>Add Food/Drinks</span>
+                    <span id="food-count-badge" style="background: var(--ps-amber); color: var(--bg-dark); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; display: none;">0</span>
+                </button>
+                <div id="food-list-container" class="food-list-container hidden">
+                    <!-- Food items populated from config.json -->
+                </div>
+            </div>
+
+            <div class="total-area" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-dim);">
+                    <span data-en="Gaming Total" data-ar="إجمالي اللعب">Gaming Total</span>
+                    <span id="gaming-total-display">0 EGP</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-dim);">
+                    <span data-en="Food Total" data-ar="إجمالي الطلبات">Food Total</span>
+                    <span id="food-total-display">0 EGP</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 1.4rem; font-weight: 800; color: var(--success); margin-top: 0.5rem;">
+                    <span data-en="Grand Total" data-ar="الإجمالي النهائي">Grand Total</span>
+                    <span id="grand-total-display">0 EGP</span>
+                </div>
+            </div>
+
+            <div class="session-actions" style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <button id="end-session-btn" class="btn-toggle" style="background: var(--danger); border-color: var(--danger); font-size: 1.1rem; padding: 1rem;" data-en="End Session & Pay" data-ar="إنهاء الجلسة والدفع">End Session & Pay</button>
+                <button class="btn-toggle close-trigger" data-en="Close" data-ar="إغلاق">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

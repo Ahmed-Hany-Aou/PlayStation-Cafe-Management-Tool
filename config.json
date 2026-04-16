@@ -1,0 +1,42 @@
+{
+  "stations": [
+    {
+      "id": "ps4-shared",
+      "nameEn": "PS4 - Partition (Shared)",
+      "nameAr": "بلاي ستيشن 4 - صالة (مشترك)",
+      "pricePerHour": 30,
+      "slotsCount": 6
+    },
+    {
+      "id": "ps4-private",
+      "nameEn": "PS4 - Private Room",
+      "nameAr": "بلاي ستيشن 4 - غرفة خاصة",
+      "pricePerHour": 50,
+      "slotsCount": 4
+    },
+    {
+      "id": "ps5-shared",
+      "nameEn": "PS5 - Partition (Shared)",
+      "nameAr": "بلاي ستيشن 5 - صالة (مشترك)",
+      "pricePerHour": 60,
+      "slotsCount": 4
+    },
+    {
+      "id": "ps5-private",
+      "nameEn": "PS5 - Private Room",
+      "nameAr": "بلاي ستيشن 5 - غرفة خاصة",
+      "pricePerHour": 100,
+      "slotsCount": 2
+    }
+  ],
+  "foodItems": [
+    { "id": "cola", "nameEn": "Cola", "nameAr": "كولا", "price": 15 },
+    { "id": "tea", "nameEn": "Tea", "nameAr": "شاي", "price": 10 },
+    { "id": "water", "nameEn": "Water", "nameAr": "مياه", "price": 5 },
+    { "id": "sandwich", "nameEn": "Sandwich", "nameAr": "ساندوتش", "price": 25 }
+  ],
+  "settings": {
+    "currency": "EGP",
+    "googleSheetUrl": "INSERT_YOUR_APPS_SCRIPT_URL_HERE"
+  }
+}

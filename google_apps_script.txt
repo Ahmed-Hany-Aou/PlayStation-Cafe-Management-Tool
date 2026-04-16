@@ -1,0 +1,46 @@
+/**
+ * PlayStation Cafe Management Tool - Google Sheets Sync
+ * Developer: Ahmed
+ * 
+ * Instructions:
+ * 1. Create a new Google Sheet.
+ * 2. Go to Extensions > Apps Script.
+ * 3. Delete any existing code and paste this.
+ * 4. Click 'Deploy' > 'New Deployment'.
+ * 5. Select 'Web App'.
+ * 6. Execute as: 'Me'.
+ * 7. Who has access: 'Anyone'.
+ * 8. Copy the Web App URL and paste it into config.json.
+ */
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    // Headers: Timestamp, StationID, StartTime, EndTime, DurationMinutes, GamingTotal, FoodTotal, GrandTotal, FoodItems, CustomerName
+    sheet.appendRow([
+      new Date(),
+      data.stationId || "",
+      data.startTime || "",
+      data.endTime || "",
+      data.durationMinutes || 0,
+      data.gamingTotal || 0,
+      data.foodTotal || 0,
+      data.grandTotal || 0,
+      JSON.stringify(data.foodItems) || "[]",
+      data.customerName || "Walk-in"
+    ]);
+    
+    return ContentService.createTextOutput(JSON.stringify({"status": "success"}))
+      .setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({"status": "error", "message": err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet() {
+  return ContentService.createTextOutput("Service is running. Use POST to send data.");
+}

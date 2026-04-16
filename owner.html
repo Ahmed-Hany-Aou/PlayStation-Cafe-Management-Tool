@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Summary - PS Cafe</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-area">
+                <div class="ps-logo-circle"></div>
+                <h1>PS Cafe | <span data-en="Owner Mode" data-ar="وضع المالك">Owner Mode</span></h1>
+            </div>
+            <div class="controls">
+                <button id="lang-toggle" class="btn-toggle">العربية</button>
+                <a href="index.html" class="btn-toggle" style="text-decoration: none;" data-en="Back to App" data-ar="العودة للتطبيق">Back to App</a>
+            </div>
+        </header>
+
+        <main>
+            <section class="section-header">
+                <h2 class="section-title" data-en="Revenue Summary" data-ar="ملخص الإيرادات">Revenue Summary</h2>
+            </section>
+
+            <!-- Revenue Cards -->
+            <div class="station-grid" style="margin-bottom: 3rem;">
+                <div class="station-card">
+                    <span class="section-title" data-en="Total Sessions" data-ar="إجمالي الجلسات">Total Sessions</span>
+                    <div id="total-sessions" class="price">0</div>
+                </div>
+                <div class="station-card">
+                    <span class="section-title" data-en="Gaming Revenue" data-ar="إيرادات الألعاب">Gaming Revenue</span>
+                    <div id="gaming-rev" class="price" style="color: var(--ps-blue);">0 EGP</div>
+                </div>
+                <div class="station-card">
+                    <span class="section-title" data-en="Food Revenue" data-ar="إيرادات المأكولات">Food Revenue</span>
+                    <div id="food-rev" class="price" style="color: var(--ps-amber);">0 EGP</div>
+                </div>
+            </div>
+
+            <section class="section-header">
+                <h2 class="section-title" data-en="Recent Sessions" data-ar="آخر الجلسات">Recent Sessions</h2>
+            </section>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-en="Date" data-ar="التاريخ">Date</th>
+                            <th data-en="Station" data-ar="الجهاز">Station</th>
+                            <th data-en="Slot" data-ar="رقم">Slot</th>
+                            <th data-en="Gaming" data-ar="اللعب">Gaming</th>
+                            <th data-en="Food" data-ar="الطلبات">Food</th>
+                            <th data-en="Total" data-ar="الإجمالي">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-table-body">
+                        <!-- Last 10 sessions -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const completed = JSON.parse(localStorage.getItem('ps-completed')) || [];
+        let currentLang = localStorage.getItem('ps-lang') || 'en';
+
+        function init() {
+            updateLanguageUI();
+            calculateStats();
+            renderTable();
+        }
+
+        function calculateStats() {
+            const totalSessions = completed.length;
+            const gamingRev = completed.reduce((sum, s) => sum + (s.gamingTotal || 0), 0);
+            const foodRev = completed.reduce((sum, s) => sum + (s.foodTotal || 0), 0);
+
+            document.getElementById('total-sessions').textContent = totalSessions;
+            document.getElementById('gaming-rev').textContent = gamingRev.toFixed(0) + ' EGP';
+            document.getElementById('food-rev').textContent = foodRev.toFixed(0) + ' EGP';
+        }
+
+        function renderTable() {
+            const body = document.getElementById('sessions-table-body');
+            body.innerHTML = '';
+
+            // Last 10, newest first
+            const last10 = completed.slice(-10).reverse();
+
+            if (last10.length === 0) {
+                body.innerHTML = '<tr><td colspan="5" style="text-align:center; opacity:0.5">No sessions found</td></tr>';
+                return;
+            }
+
+            last10.forEach(s => {
+                const date = new Date(s.endTime).toLocaleString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${date}</td>
+                    <td>${s.stationName || s.stationId}</td>
+                    <td>${s.slotNumber}</td>
+                    <td>${s.gamingTotal.toFixed(0)}</td>
+                    <td>${s.foodTotal.toFixed(0)}</td>
+                    <td style="font-weight:800; color:var(--success)">${s.grandTotal.toFixed(0)}</td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        function updateLanguageUI() {
+            document.documentElement.lang = currentLang;
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('lang-toggle').textContent = currentLang === 'en' ? 'العربية' : 'English';
+            
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute(`data-${currentLang}`);
+            });
+            localStorage.setItem('ps-lang', currentLang);
+            renderTable(); // Re-render table for date format
+        }
+
+        document.getElementById('lang-toggle').onclick = () => {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            updateLanguageUI();
+        };
+
+        init();
+    </script>
+</body>
+</html>
