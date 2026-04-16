@@ -3,104 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PS Cafe Manager v1</title>
-    <link rel="stylesheet" href="style.css">
+    <title>PS Cafe Manager v2.1</title>
+    <style>
+        /* ========== CSS DESIGN SYSTEM ========== */
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap');
+
+        :root {
+            --ps-blue: #0072ce; --ps-amber: #ff9f1c; --bg-dark: #050505; --bg-card: #1c1c1e;
+            --text-main: #f5f5f5; --text-dim: #9ca3af; --danger: #ff4d4d; --success: #2ecc71; --radius-md: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg-dark); color: var(--text-main); font-family: 'Manrope', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; flex: 1; width: 100%; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; }
+        .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+        .ps-logo-circle { width: 32px; height: 32px; border: 2px solid var(--ps-blue); border-radius: 50%; }
+        h1 { font-size: 1.25rem; font-weight: 800; }
+
+        .btn-toggle { background: #222; border: 1px solid #444; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-toggle:hover { background: #333; }
+
+        .station-section { margin-top: 2rem; }
+        .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+        .slot-btn { background: var(--bg-card); padding: 1.5rem; border-radius: var(--radius-md); text-align: center; cursor: pointer; border: 1px solid #333; transition: transform 0.1s; }
+        .slot-btn[data-status="free"] { border-bottom: 4px solid var(--ps-blue); }
+        .slot-btn[data-status="occupied"] { border: 1px solid var(--ps-amber); background: rgba(255, 159, 28, 0.05); }
+        .timer { display: block; font-size: 1.2rem; font-weight: 800; color: var(--ps-amber); margin-top: 0.5rem; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+        .modal { background: var(--bg-card); width: 100%; max-width: 450px; border-radius: 20px; padding: 2rem; border: 1px solid #444; max-height: 90vh; overflow-y: auto; }
+
+        .input-group { margin-bottom: 1rem; }
+        .input-group input { width: 100%; padding: 0.8rem; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; font-family: inherit; }
+
+        .food-item-row { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; }
+        .btn-qty { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ps-blue); background: none; color: var(--ps-blue); cursor: pointer; font-weight: 800; font-size: 1.2rem; }
+
+        .grand-total-row { display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 1.4rem; font-weight: 800; color: var(--success); }
+        .hidden { display: none !important; }
+
+        /* Payment Confirm */
+        .confirm-summary { background: #000; padding: 1.25rem; border-radius: 12px; margin: 1rem 0; border: 1px dashed var(--ps-blue); }
+        .confirm-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.95rem; }
+        .btn-confirm-pay { background: var(--success); color: #000; font-weight: 800; padding: 1rem; border: none; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 1rem; font-size: 1.1rem; }
+        .btn-back-pay { background: var(--danger); color: #fff; font-weight: 800; padding: 1rem; border: none; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
+
+        /* Footer */
+        footer { padding: 2rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); background: #0a0a0a; }
+        .qr-container { display: inline-block; background: #fff; padding: 12px; border-radius: 16px; margin-bottom: 1rem; line-height: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .qr-code { width: 120px; height: 120px; max-width: 100px; image-rendering: pixelated; }
+        @media (min-width: 768px) { .qr-code { max-width: 120px; } }
+        .credit { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
+        .whatsapp-link { color: var(--success); text-decoration: none; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+
+        @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; border: 2px solid var(--bg-card); background-clip: content-box; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--ps-blue); }
+        * { scrollbar-width: thin; scrollbar-color: #444 transparent; }
+    </style>
 </head>
 <body>
     <div id="loading-overlay" class="modal-overlay" style="display: flex;">
-        <div class="ps-logo-circle" style="animation: pulse 1.5s infinite"></div>
+        <div class="ps-logo-circle" style="animation: pulse 1s infinite"></div>
     </div>
 
     <div class="container">
         <header>
-            <div class="logo-area">
-                <div class="ps-logo-circle"></div>
-                <h1>PS Cafe</h1>
-            </div>
+            <div class="logo-area"><div class="ps-logo-circle"></div><h1>PS Cafe Manager <span style="color:var(--ps-amber)">v2.1</span></h1></div>
             <div class="controls">
                 <button id="lang-toggle" class="btn-toggle">العربية</button>
+                <a href="owner.html" class="btn-toggle">💎 <span data-en="Owner" data-ar="المالك">Owner</span></a>
             </div>
         </header>
-
-        <main id="dashboard" class="dashboard">
-            <!-- Dynamically populated station sections and slot grids -->
-        </main>
+        <main id="dashboard" class="dashboard"></main>
     </div>
 
-    <!-- START SESSION MODAL -->
+    <!-- START MODAL -->
     <div id="start-modal" class="modal-overlay">
         <div class="modal">
             <h2 data-en="Start Session" data-ar="بدء جلسة">Start Session</h2>
-            <div id="start-slot-info" style="margin: 1rem 0; color: var(--ps-blue); font-weight: 800;">
-                <!-- Pre-filled Station/Slot info -->
-            </div>
-            
-            <div class="input-group">
-                <label data-en="Customer Name (Optional)" data-ar="اسم الزبون (اختياري)">Customer Name (Optional)</label>
-                <input type="text" id="cust-name-input" placeholder="...">
-            </div>
-
-            <div class="input-group">
-                <label data-en="Start Time" data-ar="وقت البدء">Start Time</label>
-                <input type="time" id="start-time-input">
-            </div>
-
-            <div class="session-actions" style="margin-top: 2rem; display: flex; gap: 1rem;">
-                <button id="confirm-start" class="btn-toggle" style="background: var(--ps-blue); flex: 2;" data-en="Start Now" data-ar="ابدأ الآن">Start Now</button>
-                <button class="btn-toggle close-trigger" style="flex: 1;" data-en="Cancel" data-ar="إلغاء">Cancel</button>
-            </div>
+            <div id="start-slot-info" style="margin: 1rem 0; color: var(--ps-blue); font-weight: 800;"></div>
+            <div class="input-group"><label data-en="Customer" data-ar="الزبون">Customer</label><input type="text" id="cust-name-input"></div>
+            <div class="input-group"><label data-en="Time" data-ar="الوقت">Time</label><input type="time" id="start-time-input"></div>
+            <div style="display: flex; gap: 0.5rem;"><button id="confirm-start" class="btn-toggle" style="flex:2; background:var(--ps-blue);" data-en="Start Now" data-ar="ابدأ الآن">Start Now</button><button class="btn-toggle close-trigger" style="flex:1;" data-en="Back" data-ar="رجوع">Back</button></div>
         </div>
     </div>
 
-    <!-- MANAGE SESSION MODAL (Edit/End/Food) -->
+    <!-- MANAGE MODAL -->
     <div id="manage-modal" class="modal-overlay">
         <div class="modal">
             <h2 data-en="Manage Session" data-ar="إدارة الجلسة">Manage Session</h2>
-            <div id="manage-slot-info" style="margin: 0.5rem 0; color: var(--ps-amber); font-weight: 800; font-size: 0.9rem;"></div>
-            
-            <div id="active-timer-display" class="session-timer" style="text-align: center; font-size: 2.5rem; margin: 1rem 0;">00:00:00</div>
-
-            <div class="input-group">
-                <label data-en="Edit Start Time" data-ar="تعديل وقت البدء">Edit Start Time</label>
-                <div style="display: flex; gap: 0.5rem;">
-                    <input type="time" id="edit-start-time-input" style="flex: 1;">
-                    <button id="update-start-btn" class="btn-toggle" style="padding: 0 1rem;" data-en="Update" data-ar="تحديث">Update</button>
-                </div>
+            <div id="manage-slot-info" style="color:var(--ps-amber); font-weight:800; font-size:0.9rem;"></div>
+            <div id="active-timer-display" class="timer" style="font-size: 2.5rem; text-align: center; margin: 1rem 0;">00:00:00</div>
+            <div class="input-group"><div style="display:flex; gap:0.5rem;"><input type="time" id="edit-start-time-input" style="flex:1;"><button id="update-start-btn" class="btn-toggle" data-en="Update" data-ar="تحديث">Update</button></div></div>
+            <button id="toggle-food" class="btn-toggle" style="width: 100%; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span data-en="Add Food/Drinks" data-ar="إضافة مشروبات وأكل">Add Food/Drinks</span>
+                <span id="food-count-badge" style="background: var(--ps-amber); color: #000; padding: 2px 8px; border-radius: 10px; display: none;">0</span>
+            </button>
+            <div id="food-list-container" class="food-list-container hidden"></div>
+            <div class="confirm-summary" style="margin: 1rem 0; padding: 1rem; border: 1px solid #333;">
+                <div class="confirm-row" style="font-size:0.85rem; color:var(--text-dim);"><span data-en="Gaming" data-ar="اللعب">Gaming</span><span id="live-gaming-val">0.00</span></div>
+                <div class="confirm-row" style="font-size:0.85rem; color:var(--text-dim);"><span data-en="Food" data-ar="الطلبات">Food</span><span id="live-food-val">0.00</span></div>
             </div>
-
-            <!-- Food Section (Collapsible) -->
-            <div class="food-section">
-                <button id="toggle-food" class="btn-toggle" style="width: 100%; display: flex; justify-content: space-between; align-items: center;" data-en="Add Food/Drinks" data-ar="إضافة مشروبات وأكل">
-                    <span>Add Food/Drinks</span>
-                    <span id="food-count-badge" style="background: var(--ps-amber); color: var(--bg-dark); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; display: none;">0</span>
-                </button>
-                <div id="food-list-container" class="food-list-container hidden">
-                    <!-- Food items populated from config.json -->
-                </div>
-            </div>
-
-            <div class="total-area" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-dim);">
-                    <span data-en="Gaming Total" data-ar="إجمالي اللعب">Gaming Total</span>
-                    <span id="gaming-total-display">0 EGP</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-dim);">
-                    <span data-en="Food Total" data-ar="إجمالي الطلبات">Food Total</span>
-                    <span id="food-total-display">0 EGP</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 1.4rem; font-weight: 800; color: var(--success); margin-top: 0.5rem;">
-                    <span data-en="Grand Total" data-ar="الإجمالي النهائي">Grand Total</span>
-                    <span id="grand-total-display">0 EGP</span>
-                </div>
-            </div>
-
-            <div class="session-actions" style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                <button id="end-session-btn" class="btn-toggle" style="background: var(--danger); border-color: var(--danger); font-size: 1.1rem; padding: 1rem;" data-en="End Session & Pay" data-ar="إنهاء الجلسة والدفع">End Session & Pay</button>
-                <button class="btn-toggle close-trigger" data-en="Close" data-ar="إغلاق">Close</button>
-            </div>
+            <div class="grand-total-row"><span data-en="Grand Total" data-ar="الإجمالي">Grand Total</span><span id="grand-total-display">0.00 EGP</span></div>
+            <button id="pre-end-btn" class="btn-toggle" style="width: 100%; background: var(--danger); margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem;" data-en="End Session & Pay" data-ar="إنهاء الجلسة والدفع">End Session & Pay</button>
+            <button class="btn-toggle close-trigger" style="width: 100%; margin-top: 0.5rem;" data-en="Cancel" data-ar="إلغاء">Cancel</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- PAYMENT CONFIRM -->
+    <div id="payment-confirm-modal" class="modal-overlay">
+        <div class="modal" style="border-color: var(--success);">
+            <h2 data-en="Confirm Payment" data-ar="تأكيد الدفع">Confirm Payment</h2>
+            <div class="confirm-summary">
+                <div class="confirm-row"><span data-en="Duration" data-ar="المدة">Duration</span><span id="conf-duration" style="color:var(--ps-amber); font-weight:800;">--:--:--</span></div>
+                <div class="confirm-row"><span data-en="Gaming" data-ar="اللعب">Gaming</span><span id="conf-gaming">0.00</span></div>
+                <div class="confirm-row"><span data-en="Food" data-ar="الطلبات">Food</span><span id="conf-food">0.00</span></div>
+                <div class="grand-total-row" style="border-top: 1px solid #333; padding-top: 0.5rem;"><span data-en="Grand Total" data-ar="الإجمالي">Grand Total</span><span id="conf-grand">0.00</span></div>
+            </div>
+            <button id="final-confirm-btn" class="btn-confirm-pay" data-en="Confirm & Save" data-ar="تأكيد وحفظ">Confirm & Save</button>
+            <button id="cancel-confirm-btn" class="btn-back-pay" data-en="Back / Edit" data-ar="رجوع / تعديل">Back / Edit</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="qr-container" dir="ltr">
+            <img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Fahmed-hany-aou.github.io%2Fcard%2Findex" alt="QR">
+        </div>
+        <div class="credit" data-en="Powered & Designed by Eng Ahmed Hany" data-ar="تم التطوير والتصميم بواسطة المهندس أحمد هاني">Powered & Designed by Eng Ahmed Hany</div>
+        <a href="https://wa.me/201065232774" class="whatsapp-link">
+            <svg style="width: 18px; fill: currentColor;" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            +20 1065232774
+        </a>
+    </footer>
+
+    <script>
+        const CONFIG = {
+            stations: [
+                { id: "ps4-shared", nameEn: "PS4 Partition", nameAr: "PS4 صالة", pricePerHour: 30, slotsCount: 6 },
+                { id: "ps4-private", nameEn: "PS4 Private", nameAr: "PS4 غرفة", pricePerHour: 50, slotsCount: 4 },
+                { id: "ps5-shared", nameEn: "PS5 Partition", nameAr: "PS5 صالة", pricePerHour: 60, slotsCount: 4 },
+                { id: "ps5-private", nameEn: "PS5 Private", nameAr: "PS5 غرفة", pricePerHour: 100, slotsCount: 2 }
+            ],
+            foodItems: [
+                { id: "cola", nameEn: "Cola", nameAr: "كولا", price: 15 },
+                { id: "tea", nameEn: "Tea", nameAr: "شاي", price: 10 },
+                { id: "water", nameEn: "Water", nameAr: "مياه", price: 5 },
+                { id: "sandwich", nameEn: "Sandwich", nameAr: "ساندوتش", price: 25 }
+            ],
+            settings: { googleSheetUrl: "https://script.google.com/macros/s/AKfycbxwPUEumOv3TdpxRjsMALTBrxzYRVAusB-BAxhrdv7HDUh_4ONs1FbFNfyHVlPJBMg/exec" }
+        };
+        class PSCafeApp {
+            constructor() {
+                this.config = CONFIG;
+                this.currentLang = localStorage.getItem('ps-lang') || 'en';
+                this.activeSessions = JSON.parse(localStorage.getItem('ps-active')) || [];
+                this.completedSessions = JSON.parse(localStorage.getItem('ps-completed')) || [];
+                this.pendingSync = JSON.parse(localStorage.getItem('ps-pending')) || [];
+                this.activeEditingSession = null;
+                window.app = this; this.init();
+            }
+            init() {
+                this.setupEventListeners(); this.updateLanguageUI(); this.renderDashboard();
+                setInterval(() => this.updateTimers(), 1000); setInterval(() => this.flushQueue(), 3600000);
+                window.addEventListener('online', () => this.flushQueue());
+                setTimeout(() => {this.flushQueue(); document.getElementById('loading-overlay').style.display='none';}, 800);
+            }
+            updateLanguageUI() {
+                document.documentElement.dir = this.currentLang === 'ar' ? 'rtl' : 'ltr';
+                document.getElementById('lang-toggle').textContent = this.currentLang === 'en' ? 'العربية' : 'English';
+                document.querySelectorAll('[data-en]').forEach(el => el.textContent = el.getAttribute(`data-${this.currentLang}`));
+                localStorage.setItem('ps-lang', this.currentLang);
+            }
+            calculateElapsed(start) {
+                const diff = Math.max(0, new Date() - new Date(start));
+                const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+                return { formatted: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`, mins: diff/60000 };
+            }
+            calculateFoodTotal(s) { return Object.entries(s.foodCart || {}).reduce((t,[id,q]) => t + (this.config.foodItems.find(f=>f.id===id)?.price||0)*q, 0); }
+            renderDashboard() {
+                const db = document.getElementById('dashboard'); db.innerHTML = '';
+                this.config.stations.forEach(st => {
+                    const sec = document.createElement('section'); sec.className = 'station-section';
+                    sec.innerHTML = `<div class="station-header"><h2>${this.currentLang==='en'?st.nameEn:st.nameAr}</h2></div><div class="slot-grid" id="grid-${st.id}"></div>`;
+                    db.appendChild(sec); const grid = document.getElementById(`grid-${st.id}`);
+                    for (let i = 1; i <= st.slotsCount; i++) {
+                        const s = this.activeSessions.find(as => as.stationId===st.id && as.slotNumber===i);
+                        const b = document.createElement('div'); b.className = 'slot-btn'; 
+                        b.dataset.status = s?'occupied':'free';
+                        b.dataset.station = st.id; b.dataset.slot = i;
+                        const cur = this.currentLang==='en'?'EGP':'ج.م';
+                        const rateText = `${st.pricePerHour}${cur}/${this.currentLang==='en'?'hr':'س'}`;
+                        b.innerHTML = `<span style="font-size:0.75rem; color:var(--text-dim); display:block; margin-bottom:0.25rem;">${this.currentLang==='en'?'Device':'جهاز'} ${i}</span>
+                                       <span style="font-size:0.7rem; color:var(--ps-blue); font-weight:700;">${rateText}</span>
+                                       ${s?'<span class="timer">00:00:00</span>':''}`;
+                        b.onclick = () => s ? this.openManageModal(s.id) : this.openStartModal(st.id,i);
+                        grid.appendChild(b);
+                    }
+                });
+            }
+            updateTimers() {
+                const cur = this.currentLang==='en'?'EGP':'ج.م';
+                this.activeSessions.forEach(s => {
+                    const el = document.querySelector(`.slot-btn[data-station="${s.stationId}"][data-slot="${s.slotNumber}"] .timer`);
+                    if(el) el.textContent = this.calculateElapsed(s.startTime).formatted;
+                });
+                if(this.activeEditingSession) {
+                    const elap = this.calculateElapsed(this.activeEditingSession.startTime);
+                    document.getElementById('active-timer-display').textContent = elap.formatted;
+                    const st = this.config.stations.find(x=>x.id===this.activeEditingSession.stationId);
+                    const g = (st.pricePerHour/60)*elap.mins, f = this.calculateFoodTotal(this.activeEditingSession);
+                    document.getElementById('live-gaming-val').textContent = `${g.toFixed(2)} ${cur}`;
+                    document.getElementById('live-food-val').textContent = `${f.toFixed(2)} ${cur}`;
+                    document.getElementById('grand-total-display').textContent = `${(g+f).toFixed(2)} ${cur}`;
+                }
+            }
+            renderFoodList() {
+                const cur = this.currentLang==='en'?'EGP':'ج.م';
+                const cont = document.getElementById('food-list-container'); cont.innerHTML = '';
+                this.config.foodItems.forEach(it => {
+                    const q = this.activeEditingSession.foodCart?.[it.id] || 0;
+                    cont.innerHTML += `<div class="food-item-row"><span>${this.currentLang==='en'?it.nameEn:it.nameAr} <small>(${it.price}${cur})</small></span><div class="qty-controls"><button class="btn-qty" onclick="window.app.updateFoodQty('${it.id}',-1)">-</button><span>${q}</span><button class="btn-qty" onclick="window.app.updateFoodQty('${it.id}',1)">+</button></div></div>`;
+                });
+                const totalQ = Object.values(this.activeEditingSession.foodCart || {}).reduce((a,b)=>a+b, 0);
+                document.getElementById('food-count-badge').style.display = totalQ>0?'block':'none'; document.getElementById('food-count-badge').textContent = totalQ;
+            }
+            updateFoodQty(fid,d) {
+                if(!this.activeEditingSession.foodCart) this.activeEditingSession.foodCart={};
+                const n = Math.max(0, (this.activeEditingSession.foodCart[fid]||0)+d);
+                if(n===0) delete this.activeEditingSession.foodCart[fid]; else this.activeEditingSession.foodCart[fid]=n;
+                this.saveState(); this.renderFoodList(); this.updateTimers();
+            }
+            openStartModal(sid,sl) {
+                this.selectedSlot = { sid, sl }; const st = this.config.stations.find(x=>x.id===sid);
+                document.getElementById('start-slot-info').textContent = `${this.currentLang==='en'?st.nameEn:st.nameAr} | Device ${sl}`;
+                document.getElementById('start-time-input').value = new Date().toTimeString().slice(0,5);
+                document.getElementById('start-modal').style.display='flex';
+            }
+            openManageModal(sid) {
+                this.activeEditingSession = this.activeSessions.find(s=>s.id===sid);
+                const st = this.config.stations.find(x=>x.id===this.activeEditingSession.stationId);
+                document.getElementById('manage-slot-info').textContent = `${this.currentLang==='en'?st.nameEn:st.nameAr} | Device ${this.activeEditingSession.slotNumber}`;
+                document.getElementById('edit-start-time-input').value = new Date(this.activeEditingSession.startTime).toTimeString().slice(0,5);
+                document.getElementById('manage-modal').style.display='flex'; this.renderFoodList();
+            }
+            async flushQueue() {
+                const url = this.config.settings.googleSheetUrl; if(!navigator.onLine || !url) return;
+                for (const session of [...this.pendingSync]) {
+                    try {
+                        const st = this.config.stations.find(x=>x.id===session.stationId);
+                        const items = Object.entries(session.foodCart || {}).map(([id, q]) => ({ 
+                            id, 
+                            name: this.config.foodItems.find(f=>f.id===id).nameEn, 
+                            quantity: q, 
+                            price: this.config.foodItems.find(f=>f.id===id).price 
+                        }));
+                        
+                        // v3.2 DEEP AUDIT: Re-calculate totals on the fly for maximum integrity
+                        const elap = this.calculateElapsed(session.startTime);
+                        const gamingCalc = session.gamingTotal || (st ? (st.pricePerHour/60)*elap.mins : 0);
+                        const foodCalc = this.calculateFoodTotal(session);
+
+                        const payload = {
+                            id: session.id,
+                            custName: session.custName || "Guest",
+                            startTimeSheet: session.startTimeSheet || (new Date(session.startTime).toLocaleDateString() + " " + new Date(session.startTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false})),
+                            duration: session.duration || elap.formatted,
+                            endTimeSheet: session.endTimeSheet || (new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false})),
+                            stationName: session.stationName || (st ? st.nameEn : "PS"),
+                            slotNumber: session.slotNumber,
+                            gamingTotal: Number(gamingCalc || 0).toFixed(2),
+                            foodTotal: Number(foodCalc || 0).toFixed(2),
+                            grandTotal: Number((gamingCalc + foodCalc) || 0).toFixed(2),
+                            foodItems: items
+                        };
+
+                        console.log('Syncing Payload (v3.1):', payload);
+                        await fetch(url, { method:'POST', mode:'no-cors', body:JSON.stringify(payload) });
+                        this.pendingSync = this.pendingSync.filter(x => x.id !== session.id);
+                    } catch (e) { console.warn('Sync delayed', e); }
+                }
+                localStorage.setItem('ps-pending', JSON.stringify(this.pendingSync));
+            }
+            saveState() {
+                localStorage.setItem('ps-active', JSON.stringify(this.activeSessions));
+                localStorage.setItem('ps-completed', JSON.stringify(this.completedSessions));
+            }
+            setupEventListeners() {
+                document.getElementById('lang-toggle').onclick = () => { this.currentLang=this.currentLang==='en'?'ar':'en'; this.updateLanguageUI(); this.renderDashboard(); };
+                document.querySelectorAll('.close-trigger').forEach(b => b.onclick = () => document.querySelectorAll('.modal-overlay').forEach(m => m.style.display='none'));
+                document.getElementById('toggle-food').onclick = () => document.getElementById('food-list-container').classList.toggle('hidden');
+                document.getElementById('confirm-start').onclick = () => {
+                    const custName = document.getElementById('cust-name-input').value || "Guest";
+                    const [h,m] = document.getElementById('start-time-input').value.split(':'); const d = new Date(); d.setHours(h,m,0,0);
+                    this.activeSessions.push({ id:Date.now(), stationId:this.selectedSlot.sid, slotNumber:this.selectedSlot.sl, startTime:d.toISOString(), foodCart:{}, custName });
+                    this.saveState(); this.renderDashboard(); document.getElementById('start-modal').style.display='none';
+                };
+                document.getElementById('update-start-btn').onclick = () => {
+                    const [h,m] = document.getElementById('edit-start-time-input').value.split(':'); const d = new Date(this.activeEditingSession.startTime); d.setHours(h,m,0,0);
+                    this.activeEditingSession.startTime = d.toISOString(); this.saveState(); this.renderDashboard();
+                };
+                document.getElementById('pre-end-btn').onclick = () => {
+                    const s = this.activeEditingSession, st = this.config.stations.find(x=>x.id===s.stationId), elap = this.calculateElapsed(s.startTime);
+                    const g = (st.pricePerHour/60)*elap.mins, f = this.calculateFoodTotal(s), cur = this.currentLang==='en'?'EGP':'ج.م';
+                    document.getElementById('conf-duration').textContent = elap.formatted;
+                    document.getElementById('conf-gaming').textContent = `${g.toFixed(2)} ${cur}`;
+                    document.getElementById('conf-food').textContent = `${f.toFixed(2)} ${cur}`;
+                    document.getElementById('conf-grand').textContent = `${(g+f).toFixed(2)} ${cur}`;
+                    document.getElementById('manage-modal').style.display = 'none'; document.getElementById('payment-confirm-modal').style.display = 'flex';
+                };
+                document.getElementById('cancel-confirm-btn').onclick = () => { document.getElementById('payment-confirm-modal').style.display='none'; document.getElementById('manage-modal').style.display='flex'; };
+                document.getElementById('final-confirm-btn').onclick = () => {
+                    const s = this.activeEditingSession, st=this.config.stations.find(x=>x.id===s.stationId), elap=this.calculateElapsed(s.startTime);
+                    const g = (st.pricePerHour/60)*elap.mins, f = this.calculateFoodTotal(s);
+                    const now = new Date();
+                    const record = { 
+                        ...s, 
+                        stationName: this.currentLang==='en'?st.nameEn:st.nameAr, 
+                        endTime: now.toISOString(),
+                        startTimeSheet: new Date(s.startTime).toLocaleDateString() + " " + new Date(s.startTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}),
+                        endTimeSheet: now.toLocaleDateString() + " " + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}),
+                        duration: elap.formatted, 
+                        gamingTotal: Math.round(g*100)/100, 
+                        foodTotal: Math.round(f*100)/100, 
+                        grandTotal: Math.round((g+f)*100)/100 
+                    };
+                    this.completedSessions.push(record); this.activeSessions = this.activeSessions.filter(x=>x.id!==s.id); this.pendingSync.push(record);
+                    this.saveState(); localStorage.setItem('ps-pending', JSON.stringify(this.pendingSync));
+                    this.renderDashboard(); document.getElementById('payment-confirm-modal').style.display='none'; this.activeEditingSession=null; this.flushQueue();
+                };
+            }
+        }
+        new PSCafeApp();
+    </script>
 </body>
 </html>

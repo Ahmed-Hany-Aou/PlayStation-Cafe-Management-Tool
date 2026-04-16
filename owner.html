@@ -3,133 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Summary - PS Cafe</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Owner Analytics - PS Cafe v2.1</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap');
+        :root {
+            --ps-blue: #0072ce; --ps-amber: #ff9f1c; --bg-dark: #050505; --bg-card: #1c1c1e;
+            --text-main: #f5f5f5; --text-dim: #9ca3af; --success: #2ecc71; --danger: #ff4d4d; --radius-md: 16px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background: var(--bg-dark); color: var(--text-main); font-family: 'Manrope', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; flex: 1; width: 100%; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; }
+        .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+        .ps-logo-circle { width: 32px; height: 32px; border: 2px solid var(--ps-blue); border-radius: 50%; }
+        
+        .btn-toggle { background: #222; border: 1px solid #444; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; text-decoration: none; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .stat-card { background: var(--bg-card); padding: 1.5rem; border-radius: 16px; border: 1px solid #333; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: 800; margin-top: 0.5rem; }
+
+        .table-header-flex { display: flex; justify-content: space-between; align-items: center; margin-top: 3rem; margin-bottom: 1rem; }
+        .table-container { background: #111; border-radius: 12px; overflow-x: auto; border: 1px solid #333; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background: rgba(255,255,255,0.03); padding: 1rem; text-align: left; font-size: 0.75rem; color: var(--text-dim); }
+        td { padding: 1rem; border-bottom: 1px solid #222; font-size: 0.9rem; }
+        [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
+
+        .btn-reset-outline { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 0.5rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+        .btn-reset-outline:hover { background: var(--danger); color: #000; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+        .modal { background: var(--bg-card); width: 100%; max-width: 450px; border-radius: 20px; padding: 2rem; border: 1px solid #444; text-align: center; }
+
+        footer { padding: 2rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); background: #0a0a0a; margin-top: 4rem; }
+        .qr-container { display: inline-block; background: #fff; padding: 12px; border-radius: 16px; margin-bottom: 1rem; line-height: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .qr-code { width: 120px; height: 120px; max-width: 100px; image-rendering: pixelated; }
+        @media (min-width: 768px) { .qr-code { max-width: 120px; } }
+        .credit { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
+        .whatsapp-link { color: var(--success); text-decoration: none; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; border: 2px solid var(--bg-card); background-clip: content-box; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--ps-blue); }
+        * { scrollbar-width: thin; scrollbar-color: #444 transparent; }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="logo-area">
-                <div class="ps-logo-circle"></div>
-                <h1>PS Cafe | <span data-en="Owner Mode" data-ar="وضع المالك">Owner Mode</span></h1>
-            </div>
-            <div class="controls">
-                <button id="lang-toggle" class="btn-toggle">العربية</button>
-                <a href="index.html" class="btn-toggle" style="text-decoration: none;" data-en="Back to App" data-ar="العودة للتطبيق">Back to App</a>
-            </div>
+            <div class="logo-area"><div class="ps-logo-circle"></div><h1>PS Cafe <span style="color:var(--ps-blue)">Analytics</span></h1></div>
+            <div class="controls"><button id="lang-toggle" class="btn-toggle">العربية</button><a href="index.html" class="btn-toggle">🏠 Dashboard</a></div>
         </header>
 
         <main>
-            <section class="section-header">
-                <h2 class="section-title" data-en="Revenue Summary" data-ar="ملخص الإيرادات">Revenue Summary</h2>
-            </section>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label" data-en="Sessions" data-ar="الجلسات">Sessions</div><div id="total-sessions" class="stat-value">0</div></div>
+                <div class="stat-card"><div class="stat-label" data-en="Gaming Revenue" data-ar="إيرادات اللعب">Gaming Revenue</div><div id="gaming-rev" class="stat-value" style="color:var(--ps-blue);">0.00</div></div>
+                <div class="stat-card"><div class="stat-label" data-en="Food Revenue" data-ar="إيرادات المشروبات">Food Revenue</div><div id="food-rev" class="stat-value" style="color:var(--ps-amber);">0.00</div></div>
+            </div>
 
-            <!-- Revenue Cards -->
-            <div class="station-grid" style="margin-bottom: 3rem;">
-                <div class="station-card">
-                    <span class="section-title" data-en="Total Sessions" data-ar="إجمالي الجلسات">Total Sessions</span>
-                    <div id="total-sessions" class="price">0</div>
-                </div>
-                <div class="station-card">
-                    <span class="section-title" data-en="Gaming Revenue" data-ar="إيرادات الألعاب">Gaming Revenue</span>
-                    <div id="gaming-rev" class="price" style="color: var(--ps-blue);">0 EGP</div>
-                </div>
-                <div class="station-card">
-                    <span class="section-title" data-en="Food Revenue" data-ar="إيرادات المأكولات">Food Revenue</span>
-                    <div id="food-rev" class="price" style="color: var(--ps-amber);">0 EGP</div>
+            <div class="table-header-flex">
+                <h3 data-en="Recent Sessions" data-ar="أحدث الجلسات">Recent Sessions</h3>
+                <div style="display:flex; gap:0.5rem;">
+                    <button id="repair-sync-btn" class="btn-reset-outline" style="border-color:var(--ps-blue); color:var(--ps-blue);" data-en="Repair Sync" data-ar="إصلاح المزامنة">Repair Sync</button>
+                    <button id="pre-reset-btn" class="btn-reset-outline" data-en="Reset Records" data-ar="مسح السجل">Reset Records</button>
                 </div>
             </div>
 
-            <section class="section-header">
-                <h2 class="section-title" data-en="Recent Sessions" data-ar="آخر الجلسات">Recent Sessions</h2>
-            </section>
-            
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th data-en="Date" data-ar="التاريخ">Date</th>
+                            <th data-en="Start" data-ar="البداية">Start</th>
+                            <th data-en="Duration" data-ar="المدة">Duration</th>
+                            <th data-en="End" data-ar="النهاية">End</th>
                             <th data-en="Station" data-ar="الجهاز">Station</th>
-                            <th data-en="Slot" data-ar="رقم">Slot</th>
                             <th data-en="Gaming" data-ar="اللعب">Gaming</th>
-                            <th data-en="Food" data-ar="الطلبات">Food</th>
+                            <th data-en="Food" data-ar="المشروبات">Food</th>
                             <th data-en="Total" data-ar="الإجمالي">Total</th>
                         </tr>
                     </thead>
-                    <tbody id="sessions-table-body">
-                        <!-- Last 10 sessions -->
-                    </tbody>
+                    <tbody id="sessions-table-body"></tbody>
                 </table>
             </div>
         </main>
     </div>
+
+    <div id="reset-confirm-modal" class="modal-overlay">
+        <div class="modal" style="border-color: var(--danger);">
+            <h2 style="color:var(--danger)" data-en="Are you sure?" data-ar="هل أنت متأكد؟">Are you sure?</h2>
+            <p style="margin: 1rem 0; font-size: 0.9rem; opacity: 0.7;" data-en="This clears local history only. It does not affect the spreadsheet." data-ar="هذا يمسح السجل المحلي فقط. لا يؤثر على ملف جوجل شيت.">This clears local history only. It does not affect the spreadsheet.</p>
+            <button id="final-reset-btn" style="background:var(--danger); color:#fff; border:none; padding:1rem; border-radius:10px; width:100%; cursor:pointer; font-weight:800;" data-en="Delete local history" data-ar="حذف السجل المحلي">Delete local history</button>
+            <button class="close-trigger" style="background:none; border:1px solid #444; color:#fff; padding:1rem; border-radius:10px; width:100%; cursor:pointer; margin-top:0.5rem;" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="qr-container" dir="ltr">
+            <img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Fahmed-hany-aou.github.io%2Fcard%2Findex" alt="QR">
+        </div>
+        <div class="credit" data-en="Powered & Designed by Eng Ahmed Hany" data-ar="تم التطوير والتصميم بواسطة المهندس أحمد هاني">Powered & Designed by Eng Ahmed Hany</div>
+        <a href="https://wa.me/201065232774" class="whatsapp-link">
+            <svg style="width: 18px; fill: currentColor;" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            +20 1065232774
+        </a>
+    </footer>
 
     <script>
         const completed = JSON.parse(localStorage.getItem('ps-completed')) || [];
         let currentLang = localStorage.getItem('ps-lang') || 'en';
 
         function init() {
-            updateLanguageUI();
-            calculateStats();
-            renderTable();
-        }
-
-        function calculateStats() {
-            const totalSessions = completed.length;
-            const gamingRev = completed.reduce((sum, s) => sum + (s.gamingTotal || 0), 0);
-            const foodRev = completed.reduce((sum, s) => sum + (s.foodTotal || 0), 0);
-
-            document.getElementById('total-sessions').textContent = totalSessions;
-            document.getElementById('gaming-rev').textContent = gamingRev.toFixed(0) + ' EGP';
-            document.getElementById('food-rev').textContent = foodRev.toFixed(0) + ' EGP';
-        }
-
-        function renderTable() {
-            const body = document.getElementById('sessions-table-body');
-            body.innerHTML = '';
-
-            // Last 10, newest first
-            const last10 = completed.slice(-10).reverse();
-
-            if (last10.length === 0) {
-                body.innerHTML = '<tr><td colspan="5" style="text-align:center; opacity:0.5">No sessions found</td></tr>';
-                return;
-            }
-
-            last10.forEach(s => {
-                const date = new Date(s.endTime).toLocaleString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {
-                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('lang-toggle').textContent = currentLang === 'en' ? 'Switch to العربية' : 'Switch to English';
+            document.querySelectorAll('[data-en]').forEach(el => el.textContent = el.getAttribute(`data-${currentLang}`));
+            const cur = currentLang === 'en' ? 'EGP' : 'ج.م';
+            
+            document.getElementById('total-sessions').textContent = completed.length;
+            document.getElementById('gaming-rev').textContent = `${completed.reduce((s,x)=>s+(x.gamingTotal||0),0).toFixed(2)} ${cur}`;
+            document.getElementById('food-rev').textContent = `${completed.reduce((s,x)=>s+(x.foodTotal||0),0).toFixed(2)} ${cur}`;
+            
+            const body = document.getElementById('sessions-table-body'); body.innerHTML = '';
+            [...completed].reverse().slice(0, 15).forEach(s => {
                 const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${date}</td>
-                    <td>${s.stationName || s.stationId}</td>
-                    <td>${s.slotNumber}</td>
-                    <td>${s.gamingTotal.toFixed(0)}</td>
-                    <td>${s.foodTotal.toFixed(0)}</td>
-                    <td style="font-weight:800; color:var(--success)">${s.grandTotal.toFixed(0)}</td>
-                `;
+                const d = new Date(s.endTime).toLocaleDateString(currentLang==='ar'?'ar-EG':'en-US',{month:'short',day:'numeric'});
+                const st = new Date(s.startTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+                const et = new Date(s.endTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+                
+                // Calculate display duration if not stored
+                let dur = s.duration || "--:--";
+                if (!s.duration && s.endTime && s.startTime) {
+                    const diff = new Date(s.endTime) - new Date(s.startTime);
+                    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000);
+                    dur = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+                }
+
+                row.innerHTML = `<td>${d}</td><td>${st}</td><td style="color:var(--ps-amber); font-weight:700;">${dur}</td><td>${et}</td><td>${s.stationName} <span style="color:var(--ps-amber)">#${s.slotNumber}</span></td><td>${(s.gamingTotal||0).toFixed(2)}</td><td>${(s.foodTotal||0).toFixed(2)}</td><td style="font-weight:800;color:var(--success)">${(s.grandTotal||0).toFixed(2)} ${cur}</td>`;
                 body.appendChild(row);
             });
         }
-
-        function updateLanguageUI() {
-            document.documentElement.lang = currentLang;
-            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('lang-toggle').textContent = currentLang === 'en' ? 'العربية' : 'English';
-            
-            document.querySelectorAll('[data-en]').forEach(el => {
-                el.textContent = el.getAttribute(`data-${currentLang}`);
-            });
-            localStorage.setItem('ps-lang', currentLang);
-            renderTable(); // Re-render table for date format
-        }
-
-        document.getElementById('lang-toggle').onclick = () => {
-            currentLang = currentLang === 'en' ? 'ar' : 'en';
-            updateLanguageUI();
+        document.getElementById('lang-toggle').onclick = () => { currentLang=currentLang==='en'?'ar':'en'; localStorage.setItem('ps-lang',currentLang); init(); };
+        document.getElementById('pre-reset-btn').onclick = () => document.getElementById('reset-confirm-modal').style.display='flex';
+        document.getElementById('repair-sync-btn').onclick = () => {
+            if(confirm("This will clear the pending sync queue. Are you sure?")) {
+                localStorage.removeItem('ps-pending');
+                alert("Sync queue cleared. Refresh the dashboard to apply changes.");
+            }
         };
-
+        document.querySelectorAll('.close-trigger').forEach(b => b.onclick = () => document.getElementById('reset-confirm-modal').style.display='none');
+        document.getElementById('final-reset-btn').onclick = () => { localStorage.clear(); location.reload(); };
         init();
     </script>
 </body>

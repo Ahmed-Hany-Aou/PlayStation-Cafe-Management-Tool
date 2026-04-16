@@ -1,9 +1,3 @@
-/**
- * PlayStation Cafe Management Tool v1 - Final Release
- * Core Logic: Slot Management, Food/Drinks, Analytics
- */
-
-// Global reference for HTML event handlers
 window.app = null;
 
 class PSCafeApp {
@@ -12,390 +6,221 @@ class PSCafeApp {
         this.currentLang = localStorage.getItem('ps-lang') || 'en';
         this.activeSessions = JSON.parse(localStorage.getItem('ps-active')) || [];
         this.completedSessions = JSON.parse(localStorage.getItem('ps-completed')) || [];
-        
-        // Modal State
+        this.pendingSync = JSON.parse(localStorage.getItem('ps-pending')) || []; // Sync queue
+
         this.selectedSlot = null;
         this.activeEditingSession = null;
-
         window.app = this;
         this.init();
     }
 
     async init() {
         try {
-            await this.loadConfig();
+            const res = await fetch('config.json');
+            this.config = await res.json();
             this.setupEventListeners();
             this.updateLanguageUI();
             this.renderDashboard();
-            this.startTimerHub();
-            
-            // Hide loader
-            setTimeout(() => {
-                const loader = document.getElementById('loading-overlay');
-                if (loader) loader.style.display = 'none';
-            }, 800);
 
-        } catch (err) {
-            console.error('Initialization failed:', err);
-        }
+            // Core Background Jobs
+            setInterval(() => this.updateTimers(), 1000);
+
+            // Sync Queue: Initial flush + periodic retry (1hr)
+            this.flushQueue();
+            setInterval(() => this.flushQueue(), 3600000);
+
+            // Retry on restoration of internet
+            window.addEventListener('online', () => this.flushQueue());
+
+            setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 800);
+        } catch (err) { console.error('Init failed', err); }
     }
 
-    async loadConfig() {
-        try {
-            const response = await fetch('config.json');
-            this.config = await response.json();
-        } catch (e) {
-            console.error('Config load failed:', e);
-            throw e;
-        }
-    }
+    // --- SYNC QUEUE ENGINE ---
+    async flushQueue() {
+        if (!navigator.onLine || this.pendingSync.length === 0) return;
 
-    startTimerHub() {
-        setInterval(() => this.updateTimers(), 1000);
+        const url = this.config.settings.googleSheetUrl;
+        if (!url || url.includes('https://script.google.com/macros/s/AKfycbxTYzQcvoPt7fsxoUrBi4YU5zpIjroYbZu2LIHcsmFYs-tsPu5Ik99sUo9tpZ0nlZY/exec')) return;
+
+        console.log(`Syncing ${this.pendingSync.length} pending sessions...`);
+
+        // Process in local copies to avoid mutation issues during async
+        const queueToProcess = [...this.pendingSync];
+
+        for (const session of queueToProcess) {
+            try {
+                // We don't use no-cors here because we want to know if it succeeded 
+                // However, Google Apps Script redirection often fails with CORS. 
+                // 'no-cors' is safer for Apps Script but prevents us from seeing content. 
+                // We'll use 'no-cors' but remove from queue immediately as it's the "best effort" delivery.
+                await fetch(url, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(session)
+                });
+
+                // Remove from the master queue after attempt
+                this.pendingSync = this.pendingSync.filter(s => s.id !== session.id);
+                this.saveState();
+            } catch (err) {
+                console.warn('Sync failed for item, keeping in queue:', session.id);
+            }
+        }
     }
 
     updateTimers() {
         this.activeSessions.forEach(session => {
-            const slotBtn = document.querySelector(`.slot-btn[data-station="${session.stationId}"][data-slot="${session.slotNumber}"]`);
-            if (slotBtn) {
-                const elapsed = this.calculateElapsed(session.startTime);
-                const timerEl = slotBtn.querySelector('.timer');
-                if (timerEl) timerEl.textContent = elapsed.formatted;
-            }
+            const el = document.querySelector(`.slot-btn[data-station="${session.stationId}"][data-slot="${session.slotNumber}"] .timer`);
+            if (el) el.textContent = this.calculateElapsed(session.startTime).formatted;
         });
 
         if (this.activeEditingSession) {
             const elapsed = this.calculateElapsed(this.activeEditingSession.startTime);
-            const timerDisplay = document.getElementById('active-timer-display');
-            if (timerDisplay) timerDisplay.textContent = elapsed.formatted;
-            
+            document.getElementById('active-timer-display').textContent = elapsed.formatted;
             const station = this.config.stations.find(s => s.id === this.activeEditingSession.stationId);
-            const basePrice = station ? station.pricePerHour : 0;
-            const gamingTotal = (basePrice / 60) * elapsed.totalMinutes;
-            
-            const foodTotal = this.calculateFoodTotal(this.activeEditingSession);
-            const grandTotal = gamingTotal + foodTotal;
-
-            const gTotalEl = document.getElementById('gaming-total-display');
-            const fTotalEl = document.getElementById('food-total-display');
-            const grandTotalEl = document.getElementById('grand-total-display');
-
-            if (gTotalEl) gTotalEl.textContent = `${gamingTotal.toFixed(2)} ${this.config.settings.currency}`;
-            if (fTotalEl) fTotalEl.textContent = `${foodTotal.toFixed(2)} ${this.config.settings.currency}`;
-            if (grandTotalEl) grandTotalEl.textContent = `${grandTotal.toFixed(2)} ${this.config.settings.currency}`;
+            const gTotal = ((station ? station.pricePerHour : 0) / 60) * elapsed.totalMinutes;
+            const fTotal = this.calculateFoodTotal(this.activeEditingSession);
+            document.getElementById('gaming-total-display').textContent = `${gTotal.toFixed(2)} EGP`;
+            document.getElementById('food-total-display').textContent = `${fTotal.toFixed(2)} EGP`;
+            document.getElementById('grand-total-display').textContent = `${(gTotal + fTotal).toFixed(2)} EGP`;
         }
     }
 
-    calculateElapsed(startTimeStr) {
-        if (!startTimeStr) return { formatted: '00:00:00', totalMinutes: 0 };
-        const start = new Date(startTimeStr);
-        const now = new Date();
-        const diff = Math.max(0, now - start);
-        const hours = Math.floor(diff / 3600000);
-        const minutes = Math.floor((diff % 3600000) / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        return {
-            formatted: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
-            totalMinutes: diff / 60000
-        };
+    calculateElapsed(startStr) {
+        const diff = Math.max(0, new Date() - new Date(startStr));
+        const hrs = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        return { formatted: `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`, totalMinutes: diff / 60000 };
     }
 
     calculateFoodTotal(session) {
-        let total = 0;
-        if (!session || !session.foodCart) return 0;
-        for (const [id, qty] of Object.entries(session.foodCart)) {
+        let t = 0;
+        Object.entries(session.foodCart || {}).forEach(([id, q]) => {
             const item = this.config.foodItems.find(f => f.id === id);
-            if (item) total += (item.price * qty);
-        }
-        return total;
+            if (item) t += item.price * q;
+        });
+        return t;
     }
 
     renderDashboard() {
-        const dashboard = document.getElementById('dashboard');
-        if (!dashboard || !this.config) return;
-        dashboard.innerHTML = '';
-
-        this.config.stations.forEach(station => {
-            const section = document.createElement('section');
-            section.className = 'station-section';
-            const name = this.currentLang === 'en' ? station.nameEn : station.nameAr;
-            const hrLabel = this.currentLang === 'en' ? 'hr' : 'ساعة';
-            section.innerHTML = `
-                <div class="station-header">
-                    <div class="station-info">
-                        <h2>${name}</h2>
-                        <div class="price-tag">${station.pricePerHour} ${this.config.settings.currency} / ${hrLabel}</div>
-                    </div>
-                </div>
-                <div class="slot-grid" id="grid-${station.id}"></div>
-            `;
-            dashboard.appendChild(section);
-            this.renderSlots(station);
-        });
-    }
-
-    renderSlots(station) {
-        const grid = document.getElementById(`grid-${station.id}`);
-        if (!grid) return;
-        
-        for (let i = 1; i <= station.slotsCount; i++) {
-            const activeSession = this.activeSessions.find(s => s.stationId === station.id && s.slotNumber === i);
-            const btn = document.createElement('div');
-            btn.className = 'slot-btn';
-            btn.dataset.station = station.id;
-            btn.dataset.slot = i;
-            const slotName = this.currentLang === 'en' ? `Device ${i}` : `جهاز ${i}`;
-
-            if (activeSession) {
-                btn.dataset.status = 'occupied';
-                const elapsed = this.calculateElapsed(activeSession.startTime);
-                btn.innerHTML = `<span class="slot-name">${slotName}</span><span class="timer">${elapsed.formatted}</span>`;
-                btn.onclick = () => this.openManageModal(activeSession.id);
-            } else {
-                btn.dataset.status = 'free';
-                btn.innerHTML = `<span class="slot-name">${slotName}</span>`;
-                btn.onclick = () => this.openStartModal(station.id, i);
+        const db = document.getElementById('dashboard');
+        db.innerHTML = '';
+        this.config.stations.forEach(st => {
+            const sec = document.createElement('section');
+            sec.className = 'station-section';
+            sec.innerHTML = `<div class="station-header"><h2>${this.currentLang === 'en' ? st.nameEn : st.nameAr}</h2></div><div class="slot-grid" id="grid-${st.id}"></div>`;
+            db.appendChild(sec);
+            const grid = document.getElementById(`grid-${st.id}`);
+            for (let i = 1; i <= st.slotsCount; i++) {
+                const s = this.activeSessions.find(as => as.stationId === st.id && as.slotNumber === i);
+                const b = document.createElement('div');
+                b.className = 'slot-btn';
+                b.dataset.status = s ? 'occupied' : 'free';
+                b.setAttribute('data-station', st.id);
+                b.setAttribute('data-slot', i);
+                b.innerHTML = `<span class="slot-name">${this.currentLang === 'en' ? 'Device' : 'جهاز'} ${i}</span>${s ? '<span class="timer">00:00:00</span>' : ''}`;
+                b.onclick = () => s ? this.openManageModal(s.id) : this.openStartModal(st.id, i);
+                grid.appendChild(b);
             }
-            grid.appendChild(btn);
-        }
+        });
     }
 
     renderFoodList() {
-        const container = document.getElementById('food-list-container');
-        if (!container || !this.activeEditingSession) return;
-        container.innerHTML = '';
-
-        this.config.foodItems.forEach(item => {
-            const qty = this.activeEditingSession.foodCart?.[item.id] || 0;
-            const row = document.createElement('div');
-            row.className = 'food-item-row';
-            row.innerHTML = `
-                <div class="info">
-                    <span class="name">${this.currentLang === 'en' ? item.nameEn : item.nameAr}</span>
-                    <span class="price">${item.price} ${this.config.settings.currency}</span>
-                </div>
-                <div class="qty-controls">
-                    <button class="btn-qty" onclick="window.app.updateFoodQty('${item.id}', -1)">-</button>
-                    <span class="qty-val">${qty}</span>
-                    <button class="btn-qty" onclick="window.app.updateFoodQty('${item.id}', 1)">+</button>
-                </div>
-            `;
-            container.appendChild(row);
+        const cont = document.getElementById('food-list-container');
+        cont.innerHTML = '';
+        this.config.foodItems.forEach(it => {
+            const q = this.activeEditingSession.foodCart?.[it.id] || 0;
+            const div = document.createElement('div');
+            div.className = 'food-item-row';
+            const priceLabel = `${it.price} ${this.config.settings.currency}`;
+            div.innerHTML = `<div class="info"><span class="name">${this.currentLang === 'en' ? it.nameEn : it.nameAr}</span> <span style="font-size:0.8rem; color:var(--ps-amber)">(${priceLabel})</span></div><div class="qty-controls"><button class="btn-qty" onclick="window.app.updateFoodQty('${it.id}',-1)">-</button><span class="qty-val">${q}</span><button class="btn-qty" onclick="window.app.updateFoodQty('${it.id}',1)">+</button></div>`;
+            cont.appendChild(div);
         });
-
-        // Update Badge
-        const badge = document.getElementById('food-count-badge');
-        const foodCart = this.activeEditingSession.foodCart || {};
-        const totalQty = Object.values(foodCart).reduce((a, b) => a + b, 0);
-        if (badge) {
-            badge.textContent = totalQty;
-            badge.style.display = totalQty > 0 ? 'block' : 'none';
-        }
+        const totalQ = Object.values(this.activeEditingSession.foodCart || {}).reduce((a, b) => a + b, 0);
+        document.getElementById('food-count-badge').style.display = totalQ > 0 ? 'block' : 'none';
+        document.getElementById('food-count-badge').textContent = totalQ;
     }
 
-    updateFoodQty(foodId, delta) {
-        if (!this.activeEditingSession) return;
+    updateFoodQty(fid, d) {
         if (!this.activeEditingSession.foodCart) this.activeEditingSession.foodCart = {};
-        
-        const current = this.activeEditingSession.foodCart[foodId] || 0;
-        const next = Math.max(0, current + delta);
-        
-        if (next === 0) delete this.activeEditingSession.foodCart[foodId];
-        else this.activeEditingSession.foodCart[foodId] = next;
-        
-        this.saveState();
-        this.renderFoodList();
-        this.updateTimers();
+        const n = Math.max(0, (this.activeEditingSession.foodCart[fid] || 0) + d);
+        if (n === 0) delete this.activeEditingSession.foodCart[fid]; else this.activeEditingSession.foodCart[fid] = n;
+        this.saveState(); this.renderFoodList(); this.updateTimers();
     }
 
-    openStartModal(stationId, slotNumber) {
-        this.selectedSlot = { stationId, slotNumber };
-        const modal = document.getElementById('start-modal');
-        const station = this.config.stations.find(s => s.id === stationId);
-        const sName = this.currentLang === 'en' ? station.nameEn : station.nameAr;
-        const dName = this.currentLang === 'en' ? 'Device' : 'جهاز';
-        
-        const infoEl = document.getElementById('start-slot-info');
-        if (infoEl) infoEl.textContent = `${sName} | ${dName} ${slotNumber}`;
-        
-        const timeInput = document.getElementById('start-time-input');
-        if (timeInput) timeInput.value = new Date().toTimeString().slice(0, 5);
-        
-        const nameInput = document.getElementById('cust-name-input');
-        if (nameInput) nameInput.value = '';
-        
-        if (modal) modal.style.display = 'flex';
+    openStartModal(sid, sl) {
+        this.selectedSlot = { sid, sl };
+        document.getElementById('start-time-input').value = new Date().toTimeString().slice(0, 5);
+        document.getElementById('start-modal').style.display = 'flex';
     }
 
-    openManageModal(sessionId) {
-        const session = this.activeSessions.find(s => s.id === sessionId);
-        if (!session) return;
-        
-        this.activeEditingSession = session;
-        const modal = document.getElementById('manage-modal');
-        const station = this.config.stations.find(s => s.id === session.stationId);
-        
-        const sName = this.currentLang === 'en' ? station.nameEn : station.nameAr;
-        const dName = this.currentLang === 'en' ? 'Device' : 'جهاز';
-        const cName = session.customerName || (this.currentLang === 'en' ? 'Walk-in' : 'نقدي');
-        
-        const infoEl = document.getElementById('manage-slot-info');
-        if (infoEl) infoEl.textContent = `${sName} | ${dName} ${session.slotNumber} | ${cName}`;
-        
-        const timeInput = document.getElementById('edit-start-time-input');
-        if (timeInput) timeInput.value = new Date(session.startTime).toTimeString().slice(0, 5);
-        
-        // Reset Food UI
-        const foodListCont = document.getElementById('food-list-container');
-        if (foodListCont) foodListCont.classList.add('hidden');
+    openManageModal(sid) {
+        this.activeEditingSession = this.activeSessions.find(s => s.id === sid);
+        document.getElementById('edit-start-time-input').value = new Date(this.activeEditingSession.startTime).toTimeString().slice(0, 5);
+        document.getElementById('manage-modal').style.display = 'flex';
         this.renderFoodList();
-        
-        if (modal) modal.style.display = 'flex';
-        this.updateTimers();
     }
 
     setupEventListeners() {
-        const langBtn = document.getElementById('lang-toggle');
-        if (langBtn) {
-            langBtn.onclick = () => {
-                this.currentLang = this.currentLang === 'en' ? 'ar' : 'en';
-                this.updateLanguageUI();
-                this.renderDashboard();
-            };
-        }
-
-        document.querySelectorAll('.close-trigger').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
-                this.activeEditingSession = null;
-            };
-        });
-
-        const toggleFood = document.getElementById('toggle-food');
-        if (toggleFood) {
-            toggleFood.onclick = () => {
-                const list = document.getElementById('food-list-container');
-                if (list) list.classList.toggle('hidden');
-            };
-        }
-
-        const confirmStart = document.getElementById('confirm-start');
-        if (confirmStart) confirmStart.onclick = () => this.handleStartSession();
-
-        const updateStart = document.getElementById('update-start-btn');
-        if (updateStart) updateStart.onclick = () => this.handleUpdateStartTime();
-
-        const endSession = document.getElementById('end-session-btn');
-        if (endSession) endSession.onclick = () => this.handleEndSession();
-    }
-
-    handleStartSession() {
-        const timeInput = document.getElementById('start-time-input');
-        if (!timeInput) return;
-        
-        const timeVal = timeInput.value;
-        const [h, m] = timeVal.split(':');
-        const startTime = new Date();
-        startTime.setHours(h, m, 0, 0);
-
-        const newSession = {
-            id: Date.now(),
-            stationId: this.selectedSlot.stationId,
-            slotNumber: this.selectedSlot.slotNumber,
-            startTime: startTime.toISOString(),
-            customerName: document.getElementById('cust-name-input').value,
-            foodCart: {}
+        document.getElementById('lang-toggle').onclick = () => { this.currentLang = this.currentLang === 'en' ? 'ar' : 'en'; this.updateLanguageUI(); this.renderDashboard(); };
+        document.querySelectorAll('.close-trigger').forEach(b => b.onclick = () => { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); this.activeEditingSession = null; });
+        document.getElementById('toggle-food').onclick = () => document.getElementById('food-list-container').classList.toggle('hidden');
+        document.getElementById('confirm-start').onclick = () => {
+            const [h, m] = document.getElementById('start-time-input').value.split(':');
+            const d = new Date(); d.setHours(h, m, 0, 0);
+            this.activeSessions.push({ id: Date.now(), stationId: this.selectedSlot.sid, slotNumber: this.selectedSlot.sl, startTime: d.toISOString(), customerName: document.getElementById('cust-name-input').value, foodCart: {} });
+            this.saveState(); this.renderDashboard(); document.getElementById('start-modal').style.display = 'none';
         };
-
-        this.activeSessions.push(newSession);
-        this.saveState();
-        this.renderDashboard();
-        const startModal = document.getElementById('start-modal');
-        if (startModal) startModal.style.display = 'none';
-    }
-
-    handleUpdateStartTime() {
-        const timeInput = document.getElementById('edit-start-time-input');
-        if (!timeInput || !this.activeEditingSession) return;
-        
-        const [h, m] = timeInput.value.split(':');
-        const newStart = new Date(this.activeEditingSession.startTime);
-        newStart.setHours(h, m, 0, 0);
-        
-        if (newStart > new Date()) {
-            alert(this.currentLang === 'en' ? 'No future times' : 'لا يمكن اختيار وقت مستقبلي');
-            return;
-        }
-        this.activeEditingSession.startTime = newStart.toISOString();
-        this.saveState();
-        this.renderDashboard();
-    }
-
-    async handleEndSession() {
-        if (!this.activeEditingSession) return;
-        
-        const session = this.activeEditingSession;
-        const station = this.config.stations.find(s => s.id === session.stationId);
-        const elapsed = this.calculateElapsed(session.startTime);
-        const basePrice = station ? station.pricePerHour : 0;
-        const gamingTotal = (basePrice / 60) * elapsed.totalMinutes;
-        const foodTotal = this.calculateFoodTotal(session);
-
-        const foodList = [];
-        if (session.foodCart) {
-            for (const [id, qty] of Object.entries(session.foodCart)) {
-                const item = this.config.foodItems.find(f => f.id === id);
-                if (item) foodList.push({ name: item.nameEn, quantity: qty, price: item.price });
-            }
-        }
-
-        const completedData = {
-            ...session,
-            stationName: station ? station.nameEn : 'Unknown',
-            endTime: new Date().toISOString(),
-            durationMinutes: Math.round(elapsed.totalMinutes),
-            gamingTotal: Math.round(gamingTotal * 100) / 100,
-            foodTotal: Math.round(foodTotal * 100) / 100,
-            grandTotal: Math.round((gamingTotal + foodTotal) * 100) / 100,
-            foodItems: foodList
+        document.getElementById('update-start-btn').onclick = () => {
+            const [h, m] = document.getElementById('edit-start-time-input').value.split(':');
+            const d = new Date(this.activeEditingSession.startTime); d.setHours(h, m, 0, 0);
+            this.activeEditingSession.startTime = d.toISOString(); this.saveState(); this.renderDashboard();
         };
+        document.getElementById('end-session-btn').onclick = () => {
+            const s = this.activeEditingSession;
+            const st = this.config.stations.find(x => x.id === s.stationId);
+            const el = this.calculateElapsed(s.startTime);
+            const gt = (st.pricePerHour / 60) * el.totalMinutes;
+            const ft = this.calculateFoodTotal(s);
 
-        this.completedSessions.push(completedData);
-        this.activeSessions = this.activeSessions.filter(s => s.id !== session.id);
-        this.saveState();
-        this.syncToGoogle(completedData);
-        this.renderDashboard();
-        
-        const manageModal = document.getElementById('manage-modal');
-        if (manageModal) manageModal.style.display = 'none';
-        this.activeEditingSession = null;
-    }
+            const sessionResult = {
+                ...s,
+                stationName: this.currentLang === 'en' ? st.nameEn : st.nameAr,
+                endTime: new Date().toISOString(),
+                gamingTotal: Math.round(gt),
+                foodTotal: Math.round(ft),
+                grandTotal: Math.round(gt + ft)
+            };
 
-    syncToGoogle(data) {
-        const url = this.config.settings.googleSheetUrl;
-        if (!url || url.includes('INSERT')) return;
-        const payload = { ...data, foodItems: JSON.stringify(data.foodItems) };
-        fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
-             .catch(e => console.warn('Sync failed', e));
+            this.completedSessions.push(sessionResult);
+            this.activeSessions = this.activeSessions.filter(x => x.id !== s.id);
+
+            // Add to sync queue
+            this.pendingSync.push(sessionResult);
+
+            this.saveState();
+            this.renderDashboard();
+            document.getElementById('manage-modal').style.display = 'none';
+            this.activeEditingSession = null;
+
+            // Immediate attempt to flush
+            this.flushQueue();
+        };
     }
 
     saveState() {
         localStorage.setItem('ps-active', JSON.stringify(this.activeSessions));
         localStorage.setItem('ps-completed', JSON.stringify(this.completedSessions));
+        localStorage.setItem('ps-pending', JSON.stringify(this.pendingSync));
     }
 
     updateLanguageUI() {
-        document.documentElement.lang = this.currentLang;
         document.documentElement.dir = this.currentLang === 'ar' ? 'rtl' : 'ltr';
-        const langBtn = document.getElementById('lang-toggle');
-        if (langBtn) langBtn.textContent = this.currentLang === 'en' ? 'العربية' : 'English';
-        
-        document.querySelectorAll('[data-en]').forEach(el => {
-            el.textContent = el.getAttribute(`data-${this.currentLang}`);
-        });
+        document.querySelectorAll('[data-en]').forEach(el => el.textContent = el.getAttribute(`data-${this.currentLang}`));
         localStorage.setItem('ps-lang', this.currentLang);
     }
 }
 
-// Start the app which binds to window.app
 new PSCafeApp();

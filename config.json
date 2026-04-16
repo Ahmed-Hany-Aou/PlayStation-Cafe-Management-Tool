@@ -30,13 +30,33 @@
     }
   ],
   "foodItems": [
-    { "id": "cola", "nameEn": "Cola", "nameAr": "كولا", "price": 15 },
-    { "id": "tea", "nameEn": "Tea", "nameAr": "شاي", "price": 10 },
-    { "id": "water", "nameEn": "Water", "nameAr": "مياه", "price": 5 },
-    { "id": "sandwich", "nameEn": "Sandwich", "nameAr": "ساندوتش", "price": 25 }
+    {
+      "id": "cola",
+      "nameEn": "Cola",
+      "nameAr": "كولا",
+      "price": 15
+    },
+    {
+      "id": "tea",
+      "nameEn": "Tea",
+      "nameAr": "شاي",
+      "price": 10
+    },
+    {
+      "id": "water",
+      "nameEn": "Water",
+      "nameAr": "مياه",
+      "price": 5
+    },
+    {
+      "id": "sandwich",
+      "nameEn": "Sandwich",
+      "nameAr": "ساندوتش",
+      "price": 25
+    }
   ],
   "settings": {
     "currency": "EGP",
-    "googleSheetUrl": "INSERT_YOUR_APPS_SCRIPT_URL_HERE"
+    "googleSheetUrl": "YOUR_APPS_SCRIPT_URL_HERE"
   }
 }
