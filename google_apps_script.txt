@@ -1,6 +1,6 @@
 /* 
-  PlayStation Cafe Management Tool - FINAL v3.9 (ULTIMATE)
-  Audit Mode + Unified Schema: Fixed Column L "Audit Mode" capture and sync heartbeat.
+  PlayStation Cafe Management Tool - FINAL v4.0 (SMART FAILSAFE)
+  Features: Auto-Header Creation, 12-Column Audit Schema, Deduplication.
 */
 
 function doPost(e) {
@@ -10,50 +10,42 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var sessionId = data.id.toString();
     
-    // 1. Deduplication (Ignore if already saved)
+    // 0. AUTO-HEADER: If the sheet is brand new, write the headers first!
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        "sessionId", "customerName", "startTime", "duration", "endTime", 
+        "stationName", "slotNumber", "gamingTotal", "foodTotal", "grandTotal", 
+        "foodCartJson", "auditStartTime"
+      ]);
+    }
+
+    // 1. Deduplication (Prevent double saving)
     var lastRow = sheet.getLastRow();
     if (lastRow > 0) {
       var idColumn = sheet.getRange(1, 1, lastRow, 1).getValues();
       for (var i = 0; i < idColumn.length; i++) {
-        if (idColumn[i][0].toString() === sessionId) {
-          return ContentService.createTextOutput(JSON.stringify({status:"Duplicate"}))
-                 .setMimeType(ContentService.MimeType.JSON);
-        }
+        if (idColumn[i][0].toString() === sessionId) return ContentService.createTextOutput("Duplicate");
       }
     }
 
-    // 2. Map 12 Columns (Strict Schema Alignment)
-    // A:sessionId, B:customerName, C:startTime, D:duration, E:endTime, F:stationName, G:slotNumber
-    // H:gamingTotal, I:foodTotal, J:grandTotal, K:foodCartJson, L:auditStartTime
+    // 2. Map 12 Columns (Strict Audit Schema)
     sheet.appendRow([
-      sessionId,                          // A
-      data.custName || "Guest",           // B
-      data.startTimeSheet || "-",         // C
-      data.duration || "-",               // D
-      data.endTimeSheet || "-",           // E
-      data.stationName || "-",            // F
-      data.slotNumber || "-",             // G
-      data.gamingTotal || 0,              // H
-      data.foodTotal || 0,                // I
-      data.grandTotal || 0,               // J
-      JSON.stringify(data.foodItems || []),// K
-      data.auditStartTime || "Audit Fail" // L: The Real immutable start click
+      sessionId,                // A
+      data.custName || "Guest", // B
+      data.startTimeSheet || "-", // C
+      data.duration || "-",     // D
+      data.endTimeSheet || "-",   // E
+      data.stationName || "-",  // F
+      data.slotNumber || "-",   // G
+      data.gamingTotal || 0,     // H
+      data.foodTotal || 0,       // I
+      data.grandTotal || 0,      // J
+      JSON.stringify(data.foodItems || []), // K
+      data.auditStartTime || new Date().toISOString() // L
     ]);
 
-    return ContentService.createTextOutput(JSON.stringify({status:"Success"}))
-           .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput("Success");
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({status:"Error", message:err.message}))
-           .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput("Error: " + err.message);
   }
-}
-
-function setup() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheets()[0];
-  sheet.clear();
-  sheet.appendRow([
-    "sessionId", "customerName", "startTime", "duration", "endTime", 
-    "stationName", "slotNumber", "gamingTotal", "foodTotal", "grandTotal", "foodCartJson", "auditStartTime"
-  ]);
 }
