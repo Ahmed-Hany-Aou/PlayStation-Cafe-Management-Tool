@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Dashboard - PS Cafe v2.1</title>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap');
+        :root {
+            --ps-blue: #0072ce; --ps-amber: #ff9f1c; --bg-dark: #050505; --bg-card: #1c1c1e;
+            --text-main: #f5f5f5; --text-dim: #9ca3af; --success: #2ecc71; --danger: #ff4d4d; --radius-md: 16px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background: var(--bg-dark); color: var(--text-main); font-family: 'Manrope', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; flex: 1; width: 100%; }
+        
+        /* Unified Header */
+        .app-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+        .app-header .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+        .app-header .ps-logo-circle { width: 32px; height: 32px; border: 2px solid var(--ps-blue); border-radius: 50%; }
+        .app-header h1 { font-size: 1.25rem; font-weight: 800; margin: 0; }
+        .app-header .nav-links { display: flex; gap: 0.5rem; align-items: center; background: #111; padding: 0.4rem; border-radius: 12px; border: 1px solid #333; flex-wrap: wrap;}
+        .app-header .nav-links a { color: var(--text-dim); text-decoration: none; font-weight: 700; padding: 0.6rem 1rem; border-radius: 8px; transition: 0.2s; font-size: 0.9rem; }
+        .app-header .nav-links a:hover, .app-header .nav-links a.active { background: #222; color: #fff; }
+        .app-header .controls { display: flex; align-items: center; gap: 0.5rem; }
+
+        .btn-toggle { background: #222; border: 1px solid #444; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; font-family: inherit;}
+        
+        .filter-bar { display: flex; gap: 1rem; background: var(--bg-card); padding: 1rem; border-radius: 12px; border: 1px solid #333; margin-bottom: 2rem; flex-wrap: wrap; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .filter-group label { font-size: 0.8rem; color: var(--text-dim); }
+        .filter-group input { background: #000; border: 1px solid #444; color: #fff; padding: 0.6rem; border-radius: 6px; font-family: inherit; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+        .stat-card { background: var(--bg-card); padding: 1.5rem; border-radius: 16px; border: 1px solid #333; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: 800; margin-top: 0.5rem; }
+
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 2rem; margin-top: 3rem; }
+        .chart-card { background: var(--bg-card); padding: 1.5rem; border-radius: 16px; border: 1px solid #333; position: relative; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+
+        .no-data { text-align: center; padding: 4rem 1rem; color: var(--text-dim); display: none; }
+        .no-data.active { display: block; }
+        .main-content { display: none; }
+        .main-content.active { display: block; }
+
+        .btn-reset-outline { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 0.5rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: 0.2s; min-height: 44px; }
+        .btn-reset-outline:hover { background: var(--danger); color: #000; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+        .modal { background: var(--bg-card); width: 100%; max-width: 450px; border-radius: 20px; padding: 2rem; border: 1px solid #444; text-align: center; }
+        
+        footer { padding: 2rem; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); background: #0a0a0a; margin-top: 4rem; }
+        .qr-container { display: inline-block; background: #fff; padding: 12px; border-radius: 16px; margin-bottom: 1rem; line-height: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .qr-code { width: 120px; height: 120px; max-width: 100px; image-rendering: pixelated; }
+        @media (min-width: 768px) { .qr-code { max-width: 120px; } }
+        .credit { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
+        .whatsapp-link { color: var(--success); text-decoration: none; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+
+        .offline-note { font-size: 0.8rem; color: var(--text-dim); text-align: center; margin-top: 1rem; }
+
+        #pdf-loader { display: none; flex-direction: column; gap: 1rem; z-index: 2000; }
+        @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        .loader-spinner { width: 40px; height: 40px; border: 3px solid var(--ps-blue); border-radius: 50%; animation: pulse 1s infinite; }
+    </style>
+</head>
+<body>
+    <div id="pdf-loader" class="modal-overlay">
+        <div class="loader-spinner"></div>
+        <div style="color:#fff; font-weight:800;" data-en="Generating PDF..." data-ar="جاري استخراج PDF...">Generating PDF...</div>
+    </div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="ps-logo-circle"></div>
+                <h1>PS Cafe</h1>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" data-en="Staff" data-ar="الموظفين">Staff</a>
+                <a href="owner.html" data-en="Owner Summary" data-ar="ملخص المالك">Owner Summary</a>
+                <a href="dashboard.html" class="active" data-en="Analytics" data-ar="تحليلات">Analytics</a>
+            </nav>
+            <div class="controls">
+                <button id="lang-toggle" class="btn-toggle">العربية</button>
+                <button onclick="exportColorPDF()" class="btn-toggle no-print" style="border-color:var(--success); color:var(--success);">🖨️ <span data-en="Export PDF" data-ar="تصدير PDF">Export PDF</span></button>
+            </div>
+        </header>
+
+        <div id="no-data-msg" class="no-data">
+            <h2 data-en="No session data available" data-ar="لا يوجد بيانات للجلسات">No session data available</h2>
+            <p data-en="Complete some sessions first to view analytics." data-ar="قم بإنهاء بعض الجلسات أولاً لعرض التحليلات.">Complete some sessions first to view analytics.</p>
+        </div>
+
+        <main id="main-content" class="main-content">
+            <!-- Filter Bar -->
+            <div class="filter-bar no-print">
+                <div class="filter-group">
+                    <label data-en="Date From" data-ar="من تاريخ">Date From</label>
+                    <input type="date" id="filter-start">
+                </div>
+                <div class="filter-group">
+                    <label data-en="Date To" data-ar="إلى تاريخ">Date To</label>
+                    <input type="date" id="filter-end">
+                </div>
+                <div class="filter-group" style="flex-direction: row; gap:0.5rem; margin-bottom: 0.1rem;">
+                    <button class="btn-toggle" style="background:var(--ps-blue); border:none;" onclick="applyFilter()" data-en="Apply Filter" data-ar="تطبيق">Apply Filter</button>
+                    <button class="btn-toggle" onclick="resetFilter()" data-en="Reset" data-ar="إعادة ضبط">Reset</button>
+                </div>
+            </div>
+
+            <!-- Date Label for PDF -->
+            <h3 id="pdf-date-label" style="text-align:center; color:var(--text-dim); margin-bottom:1rem; font-size:1rem;"></h3>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label" data-en="Total Sessions" data-ar="إجمالي الجلسات">Total Sessions</div>
+                    <div id="dash-total-sessions" class="stat-value">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label" data-en="Total Revenue" data-ar="إجمالي الإيرادات">Total Revenue</div>
+                    <div id="dash-total-rev" class="stat-value" style="color:var(--success);">0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label" data-en="Avg/Session" data-ar="متوسط/جلسة">Avg/Session</div>
+                    <div id="dash-avg-rev" class="stat-value" style="color:var(--ps-blue);">0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label" data-en="Food Revenue" data-ar="إيرادات الطلبات">Food Revenue</div>
+                    <div id="dash-food-rev" class="stat-value" style="color:var(--ps-amber);">0.00</div>
+                </div>
+            </div>
+
+            <p class="offline-note no-print" data-en="(Note: Charts require initial internet connection to load. They will cache for offline use later.)" data-ar="(ملاحظة: الرسوم البيانية تحتاج إلى إنترنت للتحميل لأول مرة. يمكن استعراضها لاحقاً بدون إنترنت.)">(Note: Charts require initial internet connection to load. They will cache for offline use later.)</p>
+
+            <div class="charts-grid">
+                <div class="chart-card"><div class="chart-container"><canvas id="chart-revenue-station"></canvas></div></div>
+                <div class="chart-card"><div class="chart-container"><canvas id="chart-daily-trend"></canvas></div></div>
+                <div class="chart-card"><div class="chart-container"><canvas id="chart-top-food"></canvas></div></div>
+                <div class="chart-card"><div class="chart-container"><canvas id="chart-peak-hours"></canvas></div></div>
+                <div class="chart-card"><div class="chart-container"><canvas id="chart-avg-hr"></canvas></div></div>
+                <div class="chart-card"><div class="chart-container"><canvas id="chart-food-game"></canvas></div></div>
+                <div class="chart-card" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto;"><div class="chart-container"><canvas id="chart-duration"></canvas></div></div>
+            </div>
+            
+            <div style="text-align:center; margin-top:3rem;">
+                <button id="pre-reset-btn" class="btn-reset-outline no-print" data-en="Reset Local Analytics Data" data-ar="مسح بيانات التحليلات المحلية">Reset Local Analytics Data</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div id="reset-confirm-modal" class="modal-overlay">
+        <div class="modal" style="border-color: var(--danger);">
+            <h2 style="color:var(--danger)" data-en="Are you sure?" data-ar="هل أنت متأكد؟">Are you sure?</h2>
+            <p style="margin: 1rem 0; font-size: 0.9rem; opacity: 0.7;" data-en="This clears local history only. It does not affect the spreadsheet." data-ar="هذا يمسح السجل المحلي فقط. لا يؤثر على ملف جوجل شيت.">This clears local history only. It does not affect the spreadsheet.</p>
+            <button id="final-reset-btn" style="background:var(--danger); color:#fff; border:none; padding:1rem; border-radius:10px; width:100%; cursor:pointer; font-weight:800;" data-en="Delete local history" data-ar="حذف السجل المحلي">Delete local history</button>
+            <button class="close-trigger" style="background:none; border:1px solid #444; color:#fff; padding:1rem; border-radius:10px; width:100%; cursor:pointer; margin-top:0.5rem;" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        </div>
+    </div>
+
+    <footer class="no-print">
+        <div class="qr-container" dir="ltr">
+            <img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https%3A%2F%2Fahmed-hany-aou.github.io%2Fcard%2Findex" alt="QR">
+        </div>
+        <div class="credit" data-en="Powered & Designed by Eng Ahmed Hany" data-ar="تم التطوير والتصميم بواسطة المهندس أحمد هاني">Powered & Designed by Eng Ahmed Hany</div>
+        <a href="https://wa.me/201065232774" class="whatsapp-link">
+            <svg style="width: 18px; fill: currentColor;" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            +20 1065232774
+        </a>
+    </footer>
+
+    <script>
+        const ALL_DATA = JSON.parse(localStorage.getItem('ps-completed')) || [];
+        let filteredData = [...ALL_DATA];
+        let currentLang = localStorage.getItem('ps-lang') || 'en';
+        let chartInstances = [];
+
+        const fMapEn = { "cola": "Cola", "tea": "Tea", "water": "Water", "sandwich": "Sandwich" };
+        const fMapAr = { "cola": "كولا", "tea": "شاي", "water": "مياه", "sandwich": "ساندوتش" };
+        const bMapEn = ["0-30 min", "30-60 min", "60-90 min", "90-120 min", "120+ min"];
+        const bMapAr = ["0-30 دقيقة", "30-60 دقيقة", "60-90 دقيقة", "90-120 دقيقة", "120+ دقيقة"];
+
+        function setDefaultDates() {
+            if(ALL_DATA.length === 0) return;
+            const today = new Date();
+            const past30 = new Date();
+            past30.setDate(today.getDate() - 30);
+            document.getElementById('filter-end').value = today.toISOString().split('T')[0];
+            document.getElementById('filter-start').value = past30.toISOString().split('T')[0];
+            applyFilter();
+        }
+
+        function applyFilter() {
+            const sVal = document.getElementById('filter-start').value;
+            const eVal = document.getElementById('filter-end').value;
+            
+            if(!sVal && !eVal) {
+                filteredData = [...ALL_DATA];
+                document.getElementById('pdf-date-label').textContent = currentLang==='en' ? 'All Data' : 'كل البيانات';
+            } else {
+                const start = sVal ? new Date(sVal) : new Date(0);
+                start.setHours(0,0,0,0);
+                const end = eVal ? new Date(eVal) : new Date();
+                end.setHours(23,59,59,999);
+
+                filteredData = ALL_DATA.filter(s => {
+                    if(!s.endTime) return true;
+                    const d = new Date(s.endTime);
+                    return d >= start && d <= end;
+                });
+                const fromLabel = currentLang==='en'?'From':'من';
+                const toLabel = currentLang==='en'?'To':'إلى';
+                document.getElementById('pdf-date-label').textContent = `${fromLabel} ${sVal||'∞'} ${toLabel} ${eVal||'∞'}`;
+            }
+            refreshDashboard();
+        }
+
+        function resetFilter() {
+            document.getElementById('filter-start').value = '';
+            document.getElementById('filter-end').value = '';
+            applyFilter();
+        }
+
+        function updateLanguageUI() {
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('lang-toggle').textContent = currentLang === 'en' ? 'العربية' : 'English';
+            document.querySelectorAll('[data-en]').forEach(el => el.textContent = el.getAttribute(`data-${currentLang}`));
+            localStorage.setItem('ps-lang', currentLang);
+            applyFilter(); // recalculates labels
+        }
+
+        function refreshDashboard() {
+            if (ALL_DATA.length === 0) {
+                document.getElementById('no-data-msg').classList.add('active');
+                document.getElementById('main-content').classList.remove('active');
+                return;
+            }
+            document.getElementById('no-data-msg').classList.remove('active');
+            document.getElementById('main-content').classList.add('active');
+
+            const cur = currentLang === 'en' ? 'EGP' : 'ج.م';
+            const totalRev = filteredData.reduce((s, x) => s + Number(x.grandTotal || 0), 0);
+            const foodRev = filteredData.reduce((s, x) => s + Number(x.foodTotal || 0), 0);
+            const avgRev = filteredData.length > 0 ? totalRev / filteredData.length : 0;
+
+            document.getElementById('dash-total-sessions').textContent = filteredData.length;
+            document.getElementById('dash-total-rev').textContent = `${totalRev.toFixed(0)} ${cur}`;
+            document.getElementById('dash-avg-rev').textContent = `${avgRev.toFixed(1)} ${cur}`;
+            document.getElementById('dash-food-rev').textContent = `${foodRev.toFixed(0)} ${cur}`;
+
+            if (typeof Chart !== 'undefined') { 
+                renderCharts(); 
+            } else {
+                document.querySelectorAll('.chart-container').forEach(c => {
+                    c.innerHTML = `<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--danger); text-align:center; padding:1rem; border:1px dashed #444; border-radius:12px;">Charts require an active internet connection to load initially.<br>الرسوم البيانية تتطلب اتصالاً بالإنترنت للتحميل لأول مرة.</div>`;
+                });
+            }
+        }
+
+        function extractChartData() {
+            const data = {
+                stationRev: {}, dailyTrend: {}, foodItems: {}, peakHours: Array(24).fill(0),
+                hourlyRevSum: Array(24).fill(0), hourlyRevCount: Array(24).fill(0),
+                totalGameRev: 0, totalFoodRev: 0,
+                durationBins: [0, 0, 0, 0, 0] // 0-30, 30-60, 60-90, 90-120, 120+
+            };
+            const foodNames = currentLang === 'ar' ? fMapAr : fMapEn;
+
+            filteredData.forEach(s => {
+                const gr = Number(s.grandTotal || 0);
+                const fr = Number(s.foodTotal || 0);
+                const gm = Number(s.gamingTotal || 0);
+                data.totalFoodRev += fr; data.totalGameRev += gm;
+
+                const st = s.stationName || 'PS4';
+                data.stationRev[st] = (data.stationRev[st] || 0) + gr;
+
+                if (s.endTime) {
+                    const dObj = new Date(s.endTime);
+                    if(!isNaN(dObj.getTime())) {
+                        const dStr = dObj.toISOString().split('T')[0];
+                        data.dailyTrend[dStr] = (data.dailyTrend[dStr] || 0) + gr;
+                    }
+                }
+
+                if (s.foodCart) {
+                    Object.entries(s.foodCart).forEach(([id, q]) => {
+                        const fn = foodNames[id] || id;
+                        data.foodItems[fn] = (data.foodItems[fn] || 0) + q;
+                    });
+                }
+
+                if (s.startTime) {
+                    const dObj = new Date(s.startTime);
+                    if(!isNaN(dObj.getTime())) {
+                        const h = dObj.getHours();
+                        data.peakHours[h]++;
+                        data.hourlyRevSum[h] += gr;
+                        data.hourlyRevCount[h]++;
+                    }
+                }
+
+                let mins = 0;
+                if(s.duration && s.duration.includes(':')) {
+                    const p = s.duration.split(':');
+                    mins = parseInt(p[0])*60 + parseInt(p[1]);
+                } else if (s.startTime && s.endTime) {
+                    mins = (new Date(s.endTime) - new Date(s.startTime))/60000;
+                }
+                if(mins <= 30) data.durationBins[0]++;
+                else if(mins <= 60) data.durationBins[1]++;
+                else if(mins <= 90) data.durationBins[2]++;
+                else if(mins <= 120) data.durationBins[3]++;
+                else data.durationBins[4]++;
+            });
+            return data;
+        }
+
+        function renderCharts() {
+            chartInstances.forEach(c => c.destroy());
+            chartInstances = [];
+            if (filteredData.length === 0) return;
+
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.font.family = 'Manrope';
+            const rd = extractChartData();
+
+            // 1. Revenue By Station
+            chartInstances.push(new Chart(document.getElementById('chart-revenue-station'), {
+                type: 'bar',
+                data: { labels: Object.keys(rd.stationRev), datasets: [{ label: currentLang==='en'?'Revenue':'الإيرادات', data: Object.values(rd.stationRev), backgroundColor: '#0072ce', borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: currentLang==='en'?'Revenue by Station Type':'الإيرادات حسب نوع الجهاز', color: '#f5f5f5', font:{size:14} }, legend: { display: false } } }
+            }));
+
+            // 2. Daily Trend
+            let dates = Object.keys(rd.dailyTrend).sort();
+            const tData = dates.map(d => rd.dailyTrend[d]);
+            chartInstances.push(new Chart(document.getElementById('chart-daily-trend'), {
+                type: 'line',
+                data: { labels: dates, datasets: [{ label: currentLang==='en'?'Revenue':'الإيرادات', data: tData, borderColor: '#2ecc71', backgroundColor: 'rgba(46, 204, 113, 0.2)', borderWidth: 3, fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: currentLang==='en'?'Daily Revenue Trend':'اتجاه الإيرادات اليومية', color: '#f5f5f5', font:{size:14} }, legend: { display: false } } }
+            }));
+
+            // 3. Top Food
+            let fArr = Object.entries(rd.foodItems).sort((a,b) => b[1] - a[1]).slice(0,5);
+            chartInstances.push(new Chart(document.getElementById('chart-top-food'), {
+                type: 'bar', indexAxis: 'y',
+                data: { labels: fArr.map(x=>x[0]), datasets: [{ data: fArr.map(x=>x[1]), backgroundColor: ['#ff9f1c', '#0072ce', '#2ecc71', '#ff4d4d', '#9ca3af'], borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: currentLang==='en'?'Top Foods (Qty)':'أكثر الطلبات مبيعاً', color: '#f5f5f5', font:{size:14} }, legend:{display:false} } }
+            }));
+
+            // 4. Peak Hours
+            const hL = Array(24).fill(0).map((_,i) => `${i}:00`);
+            chartInstances.push(new Chart(document.getElementById('chart-peak-hours'), {
+                type: 'bar',
+                data: { labels: hL, datasets: [{ label: currentLang==='en'?'Sessions':'الجلسات', data: rd.peakHours, backgroundColor: '#9ca3af', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: currentLang==='en'?'Peak Hours (Count)':'أوقات الذروة (العدد)', color: '#f5f5f5', font:{size:14} }, legend: { display: false } } }
+            }));
+
+            // 5. Avg Rev Per Hour
+            const avgHr = rd.hourlyRevSum.map((s,i) => rd.hourlyRevCount[i]>0 ? s/rd.hourlyRevCount[i] : 0);
+            chartInstances.push(new Chart(document.getElementById('chart-avg-hr'), {
+                type: 'line',
+                data: { labels: hL, datasets: [{ label: currentLang==='en'?'Avg Revenue':'متوسط الإيرادات', data: avgHr, borderColor: '#ff9f1c', borderWidth: 2, tension: 0.1 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: currentLang==='en'?'Avg Revenue / Hour':'متوسط الإيراد للساعة', color: '#f5f5f5', font:{size:14} }, legend: { display: false } } }
+            }));
+
+            // 6. Food vs Gaming
+            const fgL = currentLang==='en' ? ['Gaming', 'Food'] : ['اللعب', 'مشروبات'];
+            chartInstances.push(new Chart(document.getElementById('chart-food-game'), {
+                type: 'doughnut',
+                data: { labels: fgL, datasets: [{ data: [rd.totalGameRev, rd.totalFoodRev], backgroundColor: ['#0072ce', '#ff9f1c'], borderWidth:0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: currentLang==='en'?'Food vs Gaming Revenue':'نسبة إيرادات اللعب والمشروبات', color: '#f5f5f5', font:{size:14} } } }
+            }));
+
+            // 7. Duration Dist
+            const bL = currentLang==='en' ? bMapEn : bMapAr;
+            chartInstances.push(new Chart(document.getElementById('chart-duration'), {
+                type: 'bar',
+                data: { labels: bL, datasets: [{ label: currentLang==='en'?'Count':'العدد', data: rd.durationBins, backgroundColor: '#2ecc71', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: currentLang==='en'?'Session Duration Spread':'توزيع مدة الجلسات', color: '#f5f5f5', font:{size:14} }, legend: { display: false } } }
+            }));
+        }
+
+        async function exportColorPDF() {
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                alert(currentLang==='en'?'PDF libraries loading. Please connect to internet or try "Print" instead.':'مكتبات PDF قيد التحميل. يرجى الاتصال بالإنترنت أو استخدم خاصية الطباعة.');
+                window.print();
+                return;
+            }
+            document.getElementById('pdf-loader').style.display = 'flex';
+            document.querySelectorAll('.no-print').forEach(el=>el.style.display='none'); // hide buttons temporarily
+            try {
+                const element = document.getElementById('main-content');
+                const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#050505' });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const pdfW = pdf.internal.pageSize.getWidth();
+                const pdfH = (canvas.height * pdfW) / canvas.width;
+                pdf.addImage(imgData, 'JPEG', 0, 10, pdfW, pdfH);
+                pdf.save('PS_Cafe_Analytics.pdf');
+            } catch(e) {
+                console.error(e);
+                alert('PDF Generation failed. Fallback to print.');
+                window.print();
+            } finally {
+                document.getElementById('pdf-loader').style.display = 'none';
+                document.querySelectorAll('.no-print').forEach(el=>el.style.display=''); // restore
+                applyFilter(); // re-checks display logic for inputs vs flex
+            }
+        }
+
+        setTimeout(() => { setDefaultDates(); }, 100);
+        document.getElementById('lang-toggle').onclick = () => { currentLang = currentLang === 'en' ? 'ar' : 'en'; updateLanguageUI(); };
+        document.getElementById('pre-reset-btn').onclick = () => document.getElementById('reset-confirm-modal').style.display='flex';
+        document.querySelectorAll('.close-trigger').forEach(b => b.onclick = () => document.getElementById('reset-confirm-modal').style.display='none');
+        document.getElementById('final-reset-btn').onclick = () => { localStorage.clear(); location.reload(); };
+    </script>
+</body>
+</html>

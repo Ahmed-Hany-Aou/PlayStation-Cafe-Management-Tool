@@ -14,10 +14,15 @@
         body { background: var(--bg-dark); color: var(--text-main); font-family: 'Manrope', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; flex: 1; width: 100%; }
         
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; }
-        .logo-area { display: flex; align-items: center; gap: 0.75rem; }
-        .ps-logo-circle { width: 32px; height: 32px; border: 2px solid var(--ps-blue); border-radius: 50%; }
-        
+        /* Unified Header */
+        .app-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+        .app-header .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+        .app-header .ps-logo-circle { width: 32px; height: 32px; border: 2px solid var(--ps-blue); border-radius: 50%; }
+        .app-header h1 { font-size: 1.25rem; font-weight: 800; margin: 0; }
+        .app-header .nav-links { display: flex; gap: 0.5rem; align-items: center; background: #111; padding: 0.4rem; border-radius: 12px; border: 1px solid #333; flex-wrap: wrap;}
+        .app-header .nav-links a { color: var(--text-dim); text-decoration: none; font-weight: 700; padding: 0.6rem 1rem; border-radius: 8px; transition: 0.2s; font-size: 0.9rem; }
+        .app-header .nav-links a:hover, .app-header .nav-links a.active { background: #222; color: #fff; }
+        .app-header .controls { display: flex; align-items: center; gap: 0.5rem; }
         .btn-toggle { background: #222; border: 1px solid #444; color: #fff; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; text-decoration: none; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
@@ -54,9 +59,19 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="logo-area"><div class="ps-logo-circle"></div><h1>PS Cafe <span style="color:var(--ps-blue)">Analytics</span></h1></div>
-            <div class="controls"><button id="lang-toggle" class="btn-toggle">العربية</button><a href="index.html" class="btn-toggle">🏠 Dashboard</a></div>
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="ps-logo-circle"></div>
+                <h1>PS Cafe</h1>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" data-en="Staff" data-ar="الموظفين">Staff</a>
+                <a href="owner.html" class="active" data-en="Owner Summary" data-ar="ملخص المالك">Owner Summary</a>
+                <a href="dashboard.html" data-en="Analytics" data-ar="تحليلات">Analytics</a>
+            </nav>
+            <div class="controls">
+                <button id="lang-toggle" class="btn-toggle">العربية</button>
+            </div>
         </header>
 
         <main>
