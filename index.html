@@ -204,6 +204,13 @@
                 return { formatted: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`, mins: diff/60000 };
             }
             calculateFoodTotal(s) { return Object.entries(s.foodCart || {}).reduce((t,[id,q]) => t + (this.config.foodItems.find(f=>f.id===id)?.price||0)*q, 0); }
+            formatDateForSheet(date) {
+                const d = new Date(date);
+                if (isNaN(d.getTime())) return "-";
+                const Y = d.getFullYear(), M = String(d.getMonth()+1).padStart(2,'0'), D = String(d.getDate()).padStart(2,'0');
+                const h = String(d.getHours()).padStart(2,'0'), m = String(d.getMinutes()).padStart(2,'0');
+                return `${Y}/${M}/${D} ${h}:${m}`;
+            }
             renderDashboard() {
                 const db = document.getElementById('dashboard'); db.innerHTML = '';
                 this.config.stations.forEach(st => {
@@ -289,16 +296,16 @@
                         const payload = {
                             id: session.id,
                             custName: session.custName || "Guest",
-                            startTimeSheet: session.startTimeSheet || (new Date(session.startTime).toLocaleDateString() + " " + new Date(session.startTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false})),
+                            startTimeSheet: session.startTimeSheet || this.formatDateForSheet(session.startTime),
                             duration: session.duration || elap.formatted,
-                            endTimeSheet: session.endTimeSheet || (new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false})),
+                            endTimeSheet: session.endTimeSheet || this.formatDateForSheet(new Date()),
                             stationName: session.stationName || (st ? st.nameEn : "PS"),
                             slotNumber: session.slotNumber,
                             gamingTotal: Number(gamingCalc || 0).toFixed(2),
                             foodTotal: Number(foodCalc || 0).toFixed(2),
                             grandTotal: Number((gamingCalc + foodCalc) || 0).toFixed(2),
                             foodItems: items,
-                            auditStartTime: session.realStartTime || session.startTime || new Date().toISOString()
+                            auditStartTime: this.formatDateForSheet(session.realStartTime || session.startTime || new Date())
                         };
 
                         console.log('--- SYNCING RECORD v3.8 ---');
@@ -324,13 +331,17 @@
                 document.getElementById('toggle-food').onclick = () => document.getElementById('food-list-container').classList.toggle('hidden');
                 document.getElementById('confirm-start').onclick = () => {
                     const custName = document.getElementById('cust-name-input').value || "Guest";
-                    const [h,m] = document.getElementById('start-time-input').value.split(':'); const d = new Date(); d.setHours(h,m,0,0);
+                    const [h,m] = document.getElementById('start-time-input').value.split(':');
+                    const d = new Date(); d.setHours(h,m,0,0);
+                    if (d.getTime() > Date.now()) d.setDate(d.getDate() - 1);
                     const realStartTime = new Date().toISOString(); 
                     this.activeSessions.push({ id:Date.now(), stationId:this.selectedSlot.sid, slotNumber:this.selectedSlot.sl, startTime:d.toISOString(), realStartTime, foodCart:{}, custName });
                     this.saveState(); this.renderDashboard(); document.getElementById('start-modal').style.display='none';
                 };
                 document.getElementById('update-start-btn').onclick = () => {
-                    const [h,m] = document.getElementById('edit-start-time-input').value.split(':'); const d = new Date(this.activeEditingSession.startTime); d.setHours(h,m,0,0);
+                    const [h,m] = document.getElementById('edit-start-time-input').value.split(':');
+                    const d = new Date(this.activeEditingSession.startTime); d.setHours(h,m,0,0);
+                    if (d.getTime() > Date.now()) d.setDate(d.getDate() - 1);
                     this.activeEditingSession.startTime = d.toISOString(); this.saveState(); this.renderDashboard();
                 };
                 document.getElementById('pre-end-btn').onclick = () => {
@@ -351,8 +362,8 @@
                         ...s, 
                         stationName: this.currentLang==='en'?st.nameEn:st.nameAr, 
                         endTime: now.toISOString(),
-                        startTimeSheet: new Date(s.startTime).toLocaleDateString() + " " + new Date(s.startTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}),
-                        endTimeSheet: now.toLocaleDateString() + " " + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}),
+                        startTimeSheet: this.formatDateForSheet(s.startTime),
+                        endTimeSheet: this.formatDateForSheet(now),
                         duration: elap.formatted, 
                         gamingTotal: Math.round(g*100)/100, 
                         foodTotal: Math.round(f*100)/100, 
