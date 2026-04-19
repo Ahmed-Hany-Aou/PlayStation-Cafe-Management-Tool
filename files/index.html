@@ -181,28 +181,33 @@
         .active-owner { color: var(--neon-amber); }
         .active-analytics { color: var(--neon-purple); }
 
-        /* Shared Footer Fix */
-        footer { margin-top: 2rem; text-align: center; border-top: 1px solid var(--border); padding: 2rem 1.5rem 1rem; position: relative; z-index: 500; }
-        .footer-logo { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; }
-        .footer-text { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.8rem; font-weight: 600; }
-        .wa-link { color: var(--neon-green); text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; }
-        .wa-link:hover { text-decoration: underline; }
+        /* QR & Footer */
+        .qr-section { margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .qr-box { background: #fff; padding: 12px; border-radius: var(--radius-md); box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 4px solid rgba(255,255,255,0.1); }
+        .qr-box img { width: 100px; height: 100px; display: block; border-radius: 8px; }
 
-        /* Print Override */
-        @media print {
-            .no-print, .bottom-nav, .app-header { display: none !important; }
-            body { background: #fff !important; color: #000 !important; }
-            .container { padding: 0 !important; }
-            .stat-card { border: 1px solid #ccc !important; background: #f9f9f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .chart-box { border: 1px solid #ccc !important; page-break-inside: avoid; margin-bottom: 1rem; }
-            .stat-val { color: #000 !important; }
+        footer { margin-top: auto; padding: 3rem 1.5rem 1rem; text-align: center; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 0.8rem; position: relative; z-index: 500; }
+        .footer-logo { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.2rem; }
+        .footer-logo span { color: var(--neon-blue); }
+        .footer-text { font-size: 0.85rem; color: var(--text-dim); font-weight: 600; }
+        .wa-link { color: var(--neon-green); text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; margin-top: 0.5rem; }
+        .wa-link:hover { transform: scale(1.05); }
+
+        /* Shared Components */
+        .filter-tabs { display: flex; gap: 0.5rem; background: rgba(255,255,255,0.05); padding: 0.4rem; border-radius: 12px; border: 1px solid var(--border); }
+        .filter-btn { 
+            flex: 1; padding: 0.6rem 1rem; border: none; background: transparent; color: var(--text-dim); 
+            font-family: var(--font-main); font-weight: 700; font-size: 0.8rem; border-radius: 8px; cursor: pointer; transition: var(--transition);
         }
+        .filter-btn.active { background: var(--neon-purple); color: #fff; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
 
-        /* Mobile specific spacing */
         @media (max-width: 768px) {
+            .app-header { padding: 1rem; justify-content: center; }
             .slot-grid { grid-template-columns: 1fr 1fr; }
-            .container { padding: 1rem; padding-bottom: 120px; }
+            .container { padding: 1rem; padding-bottom: 140px; }
             .stats-summary { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .search-area { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -248,6 +253,7 @@
             
             <div class="search-area">
                 <input type="text" id="owner-search" placeholder="Search customer, station, or date...">
+                <button class="btn btn-blue" id="btn-gen-data" data-en="Generate Test Data" data-ar="إنشاء بيانات تجريبية">Generate Test Data</button>
                 <button class="btn btn-danger" id="btn-reset-db" data-en="Clear All" data-ar="محو السجل">Clear All</button>
             </div>
 
@@ -269,11 +275,19 @@
 
         <!-- SCREEN: ANALYTICS -->
         <div id="screen-analytics" class="screen">
-            <div class="tools-bar no-print" style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
-                <div class="form-group" style="margin-bottom:0;"><input type="date" id="date-from" class="form-control"></div>
-                <div class="form-group" style="margin-bottom:0;"><input type="date" id="date-to" class="form-control"></div>
+            <div class="tools-bar no-print" style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; align-items: center;">
+                <div class="filter-tabs">
+                    <button class="filter-btn active" onclick="app.setRange('day')" data-en="Today" data-ar="اليوم">Today</button>
+                    <button class="filter-btn" onclick="app.setRange('week')" data-en="Week" data-ar="الأسبوع">Week</button>
+                    <button class="filter-btn" onclick="app.setRange('month')" data-en="Month" data-ar="الشهر">Month</button>
+                    <button class="filter-btn" onclick="app.setRange('all')" data-en="All" data-ar="الكل">All</button>
+                </div>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <input type="date" id="date-from" class="form-control" style="width:140px; min-height:38px;">
+                    <span style="color:var(--text-dim);">→</span>
+                    <input type="date" id="date-to" class="form-control" style="width:140px; min-height:38px;">
+                </div>
                 <button onclick="window.print()" class="btn btn-purple" data-en="Print PDF" data-ar="طباعة PDF">Print PDF</button>
-                <div id="analytics-tag" style="margin-left:auto; color:var(--text-dim); font-size:0.8rem; align-self:center;"></div>
             </div>
 
             <div class="charts-grid">
@@ -286,13 +300,23 @@
                     <div class="chart-wrap"><canvas id="ch-station"></canvas></div>
                 </div>
                 <div class="chart-box" style="grid-column: 1 / -1;">
-                    <div class="chart-header" data-en="Daily Traffic" data-ar="الإقبال اليومي">Daily Traffic</div>
+                    <div class="chart-header" data-en="Hourly Traffic Revenue" data-ar="الإيرادات حسب الساعة">Hourly Traffic Revenue</div>
+                    <div class="chart-wrap"><canvas id="ch-hourly"></canvas></div>
+                </div>
+                <div class="chart-box" style="grid-column: 1 / -1;">
+                    <div class="chart-header" data-en="Daily Traffic Trends" data-ar="اتجاهات الإقبال اليومي">Daily Traffic Trends</div>
                     <div class="chart-wrap"><canvas id="ch-daily"></canvas></div>
                 </div>
             </div>
         </div>
 
         <footer>
+            <div class="qr-section">
+                <div class="qr-box">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/201065232774" alt="WhatsApp QR">
+                </div>
+                <div style="font-size:0.7rem; color:var(--text-dim); font-weight:700;" data-en="Scan to Contact Developer" data-ar="امسح للتواصل مع المطور">Scan to Contact Developer</div>
+            </div>
             <div class="footer-logo">PS<span>Cafe Manager</span></div>
             <div class="footer-text" data-en="Powered & Designed by Eng Ahmed Hany" data-ar="تم التطوير والتصميم بواسطة المهندس أحمد هاني">Powered & Designed by Eng Ahmed Hany</div>
             <a href="https://wa.me/201065232774" class="wa-link" target="_blank">
@@ -537,34 +561,141 @@
             }
 
             // --- ANALYTICS SCREEN ---
+            setRange(type) {
+                const now = new Date();
+                let from = new Date();
+                if(type === 'day') from.setHours(0,0,0,0);
+                else if(type === 'week') from.setDate(now.getDate() - 7);
+                else if(type === 'month') from.setMonth(now.getMonth() - 1);
+                else from = new Date(2024,0,1);
+
+                document.getElementById('date-from').value = from.toISOString().slice(0,10);
+                document.getElementById('date-to').value = now.toISOString().slice(0,10);
+                
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                event.target.classList.add('active');
+                this.renderAnalytics();
+            }
+
             renderAnalytics() {
                 this.charts.forEach(c => c.destroy());
                 this.charts = [];
-                if (!this.history.length) return;
+                
+                const from = new Date(document.getElementById('date-from').value || '2024-01-01');
+                const to = new Date(document.getElementById('date-to').value || '2099-01-01');
+                to.setHours(23,59,59,999);
 
-                const extract = { station: {}, daily: {}, game: 0, food: 0 };
-                this.history.forEach(h => {
+                const data = this.history.filter(h => {
+                    const d = new Date(h.endTime);
+                    return d >= from && d <= to;
+                });
+
+                if (!data.length) return;
+
+                const p = { blue: '#0072ce', amber: '#f59e0b', purple: '#8b5cf6', green: '#10b981', slate: '#94a3b8' };
+                const extract = { station: {}, daily: {}, hourly: Array(24).fill(0), game: 0, food: 0 };
+                
+                data.forEach(h => {
                     const st = h.stationName || 'PS';
                     extract.station[st] = (extract.station[st] || 0) + Number(h.grandTotal);
                     const d = h.endTime.split('T')[0];
-                    extract.daily[d] = (extract.daily[d] || 0) + 1;
+                    extract.daily[d] = (extract.daily[d] || 0) + Number(h.grandTotal);
+                    const hr = new Date(h.endTime).getHours();
+                    extract.hourly[hr] += Number(h.grandTotal);
                     extract.game += Number(h.gamingTotal);
                     extract.food += Number(h.foodTotal);
                 });
 
-                const ctx1 = document.getElementById('ch-split').getContext('2d');
-                this.charts.push(new Chart(ctx1, {
+                // Charts config
+                const commonOptions = { 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { legend: { position: 'bottom', labels: { color: p.slate, font: { weight: 'bold' } } } },
+                    scales: { 
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false }, ticks: { color: p.slate } },
+                        x: { grid: { display: false }, ticks: { color: p.slate } }
+                    }
+                };
+
+                // 1. Split
+                this.charts.push(new Chart(document.getElementById('ch-split'), {
                     type: 'doughnut',
-                    data: { labels: ['Gaming', 'Food'], datasets: [{ data: [extract.game, extract.food], backgroundColor: ['#8b5cf6', '#f59e0b'], borderWidth: 0 }] },
-                    options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+                    data: { 
+                        labels: this.lang === 'en' ? ['Gaming', 'Food'] : ['اللعب', 'الطلبات'],
+                        datasets: [{ data: [extract.game, extract.food], backgroundColor: [p.purple, p.amber], borderWidth: 0, hoverOffset: 10 }] 
+                    },
+                    options: { ...commonOptions, cutout: '70%' }
                 }));
 
-                const ctx2 = document.getElementById('ch-station').getContext('2d');
-                this.charts.push(new Chart(ctx2, {
+                // 2. Station
+                this.charts.push(new Chart(document.getElementById('ch-station'), {
                     type: 'bar',
-                    data: { labels: Object.keys(extract.station), datasets: [{ data: Object.values(extract.station), backgroundColor: '#0072ce' }] },
-                    options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                    data: { 
+                        labels: Object.keys(extract.station), 
+                        datasets: [{ label: 'Revenue', data: Object.values(extract.station), backgroundColor: p.blue, borderRadius: 8 }] 
+                    },
+                    options: commonOptions
                 }));
+
+                // 3. Hourly
+                this.charts.push(new Chart(document.getElementById('ch-hourly'), {
+                    type: 'line',
+                    data: { 
+                        labels: Array.from({length: 24}, (_, i) => `${i}:00`), 
+                        datasets: [{ label: 'Price/Hour', data: extract.hourly, borderColor: p.green, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }] 
+                    },
+                    options: commonOptions
+                }));
+
+                // 4. Daily
+                const sortedDays = Object.keys(extract.daily).sort();
+                this.charts.push(new Chart(document.getElementById('ch-daily'), {
+                    type: 'line',
+                    data: { 
+                        labels: sortedDays, 
+                        datasets: [{ label: 'Daily Revenue', data: sortedDays.map(d => extract.daily[d]), borderColor: p.amber, tension: 0.3, fill: false, pointBackgroundColor: p.amber }] 
+                    },
+                    options: commonOptions
+                }));
+            }
+
+            // --- TEST DATA GENERATOR ---
+            generateTestData() {
+                if(!confirm("This will add 3 months of test data (Feb-Apr 2026). Proceed?")) return;
+                const names = ["Ahmed", "Mohamed", "Hany", "Youssef", "Kareem", "Omar", "Ali", "Mostafa", "Samy", "Guest"];
+                const newHistory = [];
+                let curr = new Date(2026, 1, 1); // Feb 1
+                const end = new Date(2026, 3, 19); // Apr 19
+                
+                while(curr <= end) {
+                    const sessionsToday = Math.floor(Math.random() * 8) + 5; // 5-12 sessions per day
+                    for(let i=0; i<sessionsToday; i++) {
+                        const st = CONFIG.stations[Math.floor(Math.random() * CONFIG.stations.length)];
+                        const durMins = Math.floor(Math.random() * 150) + 30; // 30-180 mins
+                        const start = new Date(curr);
+                        start.setHours(Math.floor(Math.random() * 12) + 12, Math.floor(Math.random() * 60)); // Afternoon/Night
+                        const endTime = new Date(start.getTime() + durMins * 60000);
+                        const gTotal = (st.rate / 60) * durMins;
+                        const fTotal = Math.random() > 0.5 ? (Math.floor(Math.random() * 3) + 1) * 20 : 0;
+                        
+                        newHistory.push({
+                            id: "test-" + Math.random().toString(36).substr(2, 9),
+                            name: names[Math.floor(Math.random() * names.length)],
+                            stid: st.id,
+                            stationName: st.nEn,
+                            slot: Math.floor(Math.random() * st.slots) + 1,
+                            endTime: endTime.toISOString(),
+                            duration: `${Math.floor(durMins/60)}h ${durMins%60}m`,
+                            gamingTotal: gTotal.toFixed(2),
+                            foodTotal: fTotal.toFixed(2),
+                            grandTotal: (gTotal + fTotal).toFixed(2)
+                        });
+                    }
+                    curr.setDate(curr.getDate() + 1);
+                }
+                this.history = [...this.history, ...newHistory];
+                this.save();
+                this.renderOwner();
+                alert("Success! 3 months of data generated.");
             }
 
             // --- LOGIC HELPERS ---
@@ -684,6 +815,7 @@
                 document.getElementById('btn-complete-pay').onclick = () => this.completeCheckout();
                 document.getElementById('btn-back-manage').onclick = () => { this.closeModals(); this.openModal('modal-manage'); };
                 document.getElementById('owner-search').oninput = () => this.renderOwner();
+                document.getElementById('btn-gen-data').onclick = () => this.generateTestData();
                 document.getElementById('btn-reset-db').onclick = () => { if(confirm('Clear all history?')) { this.history = []; this.save(); this.renderOwner(); } };
                 window.onkeydown = (e) => { if(e.key === 'Escape') this.closeModals(); };
             }
