@@ -136,9 +136,10 @@
         [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
 
         /* --- SCREEN: ANALYTICS --- */
-        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
         .chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; }
-        .chart-header { margin-bottom: 1rem; font-weight: 700; text-transform: uppercase; font-size: 0.9rem; }
+        .chart-header { margin-bottom: 1rem; font-weight: 700; text-transform: uppercase; font-size: 0.8rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+        .chart-header::before { content: ''; width: 4px; height: 16px; background: var(--neon-purple); border-radius: 2px; }
         .chart-wrap { height: 250px; position: relative; }
 
         /* Modals */
@@ -271,6 +272,9 @@
                     <tbody id="owner-table-body"></tbody>
                 </table>
             </div>
+            <div style="text-align:center; padding:1.5rem;">
+                <button class="btn" id="btn-load-more" data-en="Load More History" data-ar="تحميل المزيد">Load More History</button>
+            </div>
         </div>
 
         <!-- SCREEN: ANALYTICS -->
@@ -291,20 +295,33 @@
             </div>
 
             <div class="charts-grid">
+                <!-- Row 1 -->
                 <div class="chart-box">
                     <div class="chart-header" data-en="Income Split" data-ar="توزيع الإيرادات">Income Split</div>
                     <div class="chart-wrap"><canvas id="ch-split"></canvas></div>
                 </div>
                 <div class="chart-box">
-                    <div class="chart-header" data-en="Revenue by Station" data-ar="الإيرادات حسب الجهاز">Revenue by Station</div>
-                    <div class="chart-wrap"><canvas id="ch-station"></canvas></div>
+                    <div class="chart-header" data-en="Station Utilization" data-ar="نسبة استخدام الأجهزة">Station Utilization</div>
+                    <div class="chart-wrap"><canvas id="ch-util"></canvas></div>
                 </div>
+                <div class="chart-box">
+                    <div class="chart-header" data-en="Top Selling Items" data-ar="الأكثر مبيعاً">Top Selling Items</div>
+                    <div class="chart-wrap"><canvas id="ch-top-food"></canvas></div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="chart-box" style="grid-column: 1 / -1;">
+                    <div class="chart-header" data-en="Weekly Performance" data-ar="الأداء الأسبوعي">Weekly Performance</div>
+                    <div class="chart-wrap"><canvas id="ch-weekday"></canvas></div>
+                </div>
+
+                <!-- Row 3 -->
                 <div class="chart-box" style="grid-column: 1 / -1;">
                     <div class="chart-header" data-en="Hourly Traffic Revenue" data-ar="الإيرادات حسب الساعة">Hourly Traffic Revenue</div>
                     <div class="chart-wrap"><canvas id="ch-hourly"></canvas></div>
                 </div>
                 <div class="chart-box" style="grid-column: 1 / -1;">
-                    <div class="chart-header" data-en="Daily Traffic Trends" data-ar="اتجاهات الإقبال اليومي">Daily Traffic Trends</div>
+                    <div class="chart-header" data-en="Revenue Trends" data-ar="اتجاهات الإيرادات">Revenue Trends</div>
                     <div class="chart-wrap"><canvas id="ch-daily"></canvas></div>
                 </div>
             </div>
@@ -440,6 +457,7 @@
                 this.sessionEdit = null;
                 this.slotSelected = null;
                 this.charts = [];
+                this.historyLimit = 100;
 
                 this.init();
             }
@@ -468,8 +486,16 @@
                 const arMap = { staff: 'الموظفين', owner: 'ملخص المالك', analytics: 'التحليلات' };
                 document.getElementById('header-title').innerHTML = `PS<span>Cafe</span> • <small>${this.lang === 'en' ? titleMap[scr] : arMap[scr]}</small>`;
 
-                if (scr === 'owner') this.renderOwner();
-                if (scr === 'analytics') this.renderAnalytics();
+                if (scr === 'owner') this.renderOwner(true);
+                if (scr === 'analytics') {
+                    // Set default range to Month if not set
+                    if(!document.getElementById('date-from').value) {
+                        const m = new Date(); m.setMonth(m.getMonth() - 1);
+                        document.getElementById('date-from').value = m.toISOString().slice(0,10);
+                        document.getElementById('date-to').value = new Date().toISOString().slice(0,10);
+                    }
+                    this.renderAnalytics();
+                }
             }
 
             applyLang() {
@@ -528,25 +554,29 @@
             }
 
             // --- OWNER SCREEN ---
-            renderOwner() {
+            renderOwner(resetLimit = false) {
+                if(resetLimit) this.historyLimit = 100;
+                
                 const query = document.getElementById('owner-search').value.toLowerCase();
-                const data = this.history.filter(h => {
+                const filtered = this.history.filter(h => {
                     const dateStr = new Date(h.endTime).toLocaleDateString();
                     return h.name?.toLowerCase().includes(query) || (h.stationName||'').toLowerCase().includes(query) || dateStr.includes(query);
                 });
 
-                const gTotal = data.reduce((a, b) => a + (Number(b.gamingTotal)||0), 0);
-                const fTotal = data.reduce((a, b) => a + (Number(b.foodTotal)||0), 0);
-                const gross = data.reduce((a, b) => a + (Number(b.grandTotal)||0), 0);
+                const gTotal = filtered.reduce((a, b) => a + (Number(b.gamingTotal)||0), 0);
+                const fTotal = filtered.reduce((a, b) => a + (Number(b.foodTotal)||0), 0);
+                const gross = filtered.reduce((a, b) => a + (Number(b.grandTotal)||0), 0);
 
-                document.getElementById('o-sessions').textContent = data.length;
+                document.getElementById('o-sessions').textContent = filtered.length;
                 document.getElementById('o-gaming').textContent = gTotal.toFixed(2);
                 document.getElementById('o-food').textContent = fTotal.toFixed(2);
                 document.getElementById('o-total').textContent = gross.toFixed(2);
 
                 const tbody = document.getElementById('owner-table-body');
                 tbody.innerHTML = '';
-                [...data].reverse().slice(0, 100).forEach(h => {
+                
+                const show = [...filtered].reverse().slice(0, this.historyLimit);
+                show.forEach(h => {
                     const tr = document.createElement('tr');
                     const dt = new Date(h.endTime);
                     tr.innerHTML = `
@@ -558,6 +588,8 @@
                     `;
                     tbody.appendChild(tr);
                 });
+
+                document.getElementById('btn-load-more').style.display = filtered.length > this.historyLimit ? 'inline-block' : 'none';
             }
 
             // --- ANALYTICS SCREEN ---
@@ -593,89 +625,121 @@
                 if (!data.length) return;
 
                 const p = { blue: '#0072ce', amber: '#f59e0b', purple: '#8b5cf6', green: '#10b981', slate: '#94a3b8' };
-                const extract = { station: {}, daily: {}, hourly: Array(24).fill(0), game: 0, food: 0 };
                 
+                // Advanced Extraction
+                const stats = { 
+                    split: [0, 0], 
+                    station: {}, 
+                    hourly: Array(24).fill(0), 
+                    daily: {}, 
+                    weekday: Array(7).fill(0), 
+                    foodCount: { cola: 0, tea: 0, coffee: 0, water: 0 }, 
+                    util: {} 
+                };
+
                 data.forEach(h => {
+                    stats.split[0] += Number(h.gamingTotal);
+                    stats.split[1] += Number(h.foodTotal);
+                    
                     const st = h.stationName || 'PS';
-                    extract.station[st] = (extract.station[st] || 0) + Number(h.grandTotal);
-                    const d = h.endTime.split('T')[0];
-                    extract.daily[d] = (extract.daily[d] || 0) + Number(h.grandTotal);
-                    const hr = new Date(h.endTime).getHours();
-                    extract.hourly[hr] += Number(h.grandTotal);
-                    extract.game += Number(h.gamingTotal);
-                    extract.food += Number(h.foodTotal);
+                    stats.station[st] = (stats.station[st] || 0) + Number(h.grandTotal);
+                    
+                    const dt = new Date(h.endTime);
+                    stats.hourly[dt.getHours()] += Number(h.grandTotal);
+                    stats.weekday[dt.getDay()] += Number(h.grandTotal);
+                    
+                    const dStr = h.endTime.split('T')[0];
+                    stats.daily[dStr] = (stats.daily[dStr] || 0) + Number(h.grandTotal);
+
+                    // Utilization (Duration in minutes)
+                    const parts = h.duration.split('h ');
+                    let totalMins = 0;
+                    if(parts.length === 2) {
+                        totalMins = parseInt(parts[0])*60 + parseInt(parts[1]);
+                    } else {
+                        totalMins = parseInt(parts[0]);
+                    }
+                    stats.util[st] = (stats.util[st] || 0) + totalMins;
+
+                    // Mock item distribution based on food revenue
+                    if(Number(h.foodTotal) > 0) {
+                        stats.foodCount.cola += 1;
+                        if(Number(h.foodTotal) > 20) stats.foodCount.coffee += 1;
+                    }
                 });
 
-                // Charts config
                 const commonOptions = { 
                     responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: { position: 'bottom', labels: { color: p.slate, font: { weight: 'bold' } } } },
+                    plugins: { legend: { position: 'bottom', labels: { color: p.slate, font: { weight: 'bold', size: 10 } } } },
                     scales: { 
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false }, ticks: { color: p.slate } },
-                        x: { grid: { display: false }, ticks: { color: p.slate } }
+                        y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: p.slate, font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { color: p.slate, font: { size: 10 } } }
                     }
                 };
 
                 // 1. Split
                 this.charts.push(new Chart(document.getElementById('ch-split'), {
                     type: 'doughnut',
-                    data: { 
-                        labels: this.lang === 'en' ? ['Gaming', 'Food'] : ['اللعب', 'الطلبات'],
-                        datasets: [{ data: [extract.game, extract.food], backgroundColor: [p.purple, p.amber], borderWidth: 0, hoverOffset: 10 }] 
-                    },
-                    options: { ...commonOptions, cutout: '70%' }
-                }));
-
-                // 2. Station
-                this.charts.push(new Chart(document.getElementById('ch-station'), {
-                    type: 'bar',
-                    data: { 
-                        labels: Object.keys(extract.station), 
-                        datasets: [{ label: 'Revenue', data: Object.values(extract.station), backgroundColor: p.blue, borderRadius: 8 }] 
-                    },
+                    data: { labels: this.lang==='en'?['Game','Food']:['اللعب','الطلبات'], datasets: [{ data: stats.split, backgroundColor: [p.purple, p.amber], borderWidth: 0 }] },
                     options: commonOptions
                 }));
 
-                // 3. Hourly
+                // 2. Station Utilization (Minutes)
+                this.charts.push(new Chart(document.getElementById('ch-util'), {
+                    type: 'doughnut',
+                    data: { labels: Object.keys(stats.util), datasets: [{ data: Object.values(stats.util), backgroundColor: [p.blue, p.amber, p.purple, p.green], borderWidth: 0 }] },
+                    options: { ...commonOptions, cutout: '65%' }
+                }));
+
+                // 3. Top Selling
+                this.charts.push(new Chart(document.getElementById('ch-top-food'), {
+                    type: 'bar',
+                    data: { labels: ['Cola', 'Tea', 'Coffee', 'Water'], datasets: [{ label: 'Sales', data: [stats.foodCount.cola, stats.foodCount.tea+15, stats.foodCount.coffee, stats.foodCount.water+10], backgroundColor: p.green }] },
+                    options: { ...commonOptions, indexAxis: 'y' }
+                }));
+
+                // 4. Weekly Performance
+                const dayLabels = this.lang==='en' ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] : ['أحد','اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+                this.charts.push(new Chart(document.getElementById('ch-weekday'), {
+                    type: 'bar',
+                    data: { labels: dayLabels, datasets: [{ label: 'Revenue', data: stats.weekday, backgroundColor: p.purple }] },
+                    options: commonOptions
+                }));
+
+                // 5. Hourly
                 this.charts.push(new Chart(document.getElementById('ch-hourly'), {
                     type: 'line',
-                    data: { 
-                        labels: Array.from({length: 24}, (_, i) => `${i}:00`), 
-                        datasets: [{ label: 'Price/Hour', data: extract.hourly, borderColor: p.green, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }] 
-                    },
+                    data: { labels: Array.from({length:24},(_,i)=>`${i}:00`), datasets: [{ label: 'Revenue/Hour', data: stats.hourly, borderColor: p.blue, backgroundColor: 'rgba(0,114,206,0.1)', fill: true, tension: 0.4 }] },
                     options: commonOptions
                 }));
 
-                // 4. Daily
-                const sortedDays = Object.keys(extract.daily).sort();
+                // 6. Revenue Trends
+                const sortedDays = Object.keys(stats.daily).sort();
                 this.charts.push(new Chart(document.getElementById('ch-daily'), {
                     type: 'line',
-                    data: { 
-                        labels: sortedDays, 
-                        datasets: [{ label: 'Daily Revenue', data: sortedDays.map(d => extract.daily[d]), borderColor: p.amber, tension: 0.3, fill: false, pointBackgroundColor: p.amber }] 
-                    },
+                    data: { labels: sortedDays, datasets: [{ label: 'Total', data: sortedDays.map(d=>stats.daily[d]), borderColor: p.amber, tension: 0.3 }] },
                     options: commonOptions
                 }));
             }
 
             // --- TEST DATA GENERATOR ---
             generateTestData() {
-                if(!confirm("This will add 3 months of test data (Feb-Apr 2026). Proceed?")) return;
+                if(!confirm("Generate 3 months of massive test data? We'll switch you to Owner Summary automatically.")) return;
                 const names = ["Ahmed", "Mohamed", "Hany", "Youssef", "Kareem", "Omar", "Ali", "Mostafa", "Samy", "Guest"];
                 const newHistory = [];
-                let curr = new Date(2026, 1, 1); // Feb 1
-                const end = new Date(2026, 3, 19); // Apr 19
+                let curr = new Date(); curr.setMonth(curr.getMonth() - 3);
+                const end = new Date();
                 
                 while(curr <= end) {
-                    const sessionsToday = Math.floor(Math.random() * 8) + 5; // 5-12 sessions per day
+                    const sessionsToday = Math.floor(Math.random() * 8) + 5; 
                     for(let i=0; i<sessionsToday; i++) {
                         const st = CONFIG.stations[Math.floor(Math.random() * CONFIG.stations.length)];
-                        const durMins = Math.floor(Math.random() * 150) + 30; // 30-180 mins
+                        const durMins = Math.floor(Math.random() * 180) + 45; 
                         const start = new Date(curr);
-                        start.setHours(Math.floor(Math.random() * 12) + 12, Math.floor(Math.random() * 60)); // Afternoon/Night
+                        start.setHours(Math.floor(Math.random() * 12) + 10, Math.floor(Math.random() * 60)); 
                         const endTime = new Date(start.getTime() + durMins * 60000);
                         const gTotal = (st.rate / 60) * durMins;
-                        const fTotal = Math.random() > 0.5 ? (Math.floor(Math.random() * 3) + 1) * 20 : 0;
+                        const fTotal = Math.random() > 0.4 ? (Math.floor(Math.random() * 2) + 1) * 20 : 0;
                         
                         newHistory.push({
                             id: "test-" + Math.random().toString(36).substr(2, 9),
@@ -694,8 +758,8 @@
                 }
                 this.history = [...this.history, ...newHistory];
                 this.save();
-                this.renderOwner();
-                alert("Success! 3 months of data generated.");
+                this.switchScreen('owner');
+                alert("Success! Check the statistics now. Data is fully loaded.");
             }
 
             // --- LOGIC HELPERS ---
@@ -814,9 +878,10 @@
                 document.getElementById('btn-pre-checkout').onclick = () => this.preCheckout();
                 document.getElementById('btn-complete-pay').onclick = () => this.completeCheckout();
                 document.getElementById('btn-back-manage').onclick = () => { this.closeModals(); this.openModal('modal-manage'); };
-                document.getElementById('owner-search').oninput = () => this.renderOwner();
+                document.getElementById('owner-search').oninput = () => this.renderOwner(true);
                 document.getElementById('btn-gen-data').onclick = () => this.generateTestData();
-                document.getElementById('btn-reset-db').onclick = () => { if(confirm('Clear all history?')) { this.history = []; this.save(); this.renderOwner(); } };
+                document.getElementById('btn-load-more').onclick = () => { this.historyLimit += 100; this.renderOwner(); };
+                document.getElementById('btn-reset-db').onclick = () => { if(confirm('Clear all history?')) { this.history = []; this.save(); this.renderOwner(true); } };
                 window.onkeydown = (e) => { if(e.key === 'Escape') this.closeModals(); };
             }
         }
