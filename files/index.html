@@ -3,27 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PS Cafe Manager v4.0</title>
+    <title>PS Cafe Master System v5.0</title>
+    <!-- Combined Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* PS5 Neon Theme Colors */
+            /* Design System */
             --bg-dark: #050508;
-            --surface-m: rgba(20, 20, 28, 0.7);
+            --surface-m: rgba(20, 20, 28, 0.75);
             --surface: #12121a;
             --surface-hover: #1a1a26;
             --border: rgba(255, 255, 255, 0.08);
-            --border-glow: rgba(59, 130, 246, 0.3);
             
             --neon-blue: #0072ce;
-            --neon-blue-glow: rgba(0, 114, 206, 0.4);
             --neon-amber: #f59e0b;
-            --neon-amber-glow: rgba(245, 158, 11, 0.4);
             --neon-green: #10b981;
-            --neon-green-glow: rgba(16, 185, 129, 0.4);
             --neon-red: #ef4444;
+            --neon-purple: #8b5cf6;
 
             --text-main: #ffffff;
             --text-dim: #94a3b8;
@@ -40,462 +39,417 @@
         
         body { 
             background-color: var(--bg-dark); 
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(0, 114, 206, 0.05), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05), transparent 25%);
             color: var(--text-main); 
             font-family: var(--font-main); 
             min-height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
+            display: flex; flex-direction: column; 
             overflow-x: hidden;
+            background-attachment: fixed;
         }
 
-        /* Ambient animated background */
-        .ambient-bg {
-            position: fixed; inset: 0; z-index: -1; pointer-events: none;
-            background: linear-gradient(to bottom, transparent, var(--bg-dark));
-        }
+        /* Dynamic Background gradients by Screen */
+        body.staff { background-image: radial-gradient(circle at 10% 30%, rgba(0, 114, 206, 0.1), transparent 40%); }
+        body.owner { background-image: radial-gradient(circle at 10% 30%, rgba(245, 158, 11, 0.1), transparent 40%); }
+        body.analytics { background-image: radial-gradient(circle at 10% 30%, rgba(139, 92, 246, 0.1), transparent 40%); }
 
         .container { 
             max-width: 1400px; margin: 0 auto; padding: 1.5rem; flex: 1; width: 100%; 
-            display: flex; flex-direction: column;
+            display: flex; flex-direction: column; padding-bottom: 120px; /* Space for Bottom Nav + Footer */
         }
 
-        /* Header */
+        /* Shared Header */
         .app-header { 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 1rem 1.5rem; background: var(--surface-m);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border); border-radius: var(--radius-lg);
-            flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
-            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+            gap: 1rem; margin-bottom: 2rem; position: sticky; top: 0; z-index: 900;
         }
-        
-        .logo-area { display: flex; align-items: center; gap: 1rem; }
+        .logo-area { display: flex; align-items: center; gap: 0.8rem; }
         .ps-logo { 
             width: 44px; height: 44px; background: linear-gradient(135deg, var(--neon-blue) 0%, #312e81 100%); 
             border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; 
-            font-weight: 800; font-size: 1.1rem; box-shadow: 0 0 15px var(--neon-blue-glow);
+            font-weight: 800; font-size: 1.1rem; box-shadow: 0 0 15px rgba(0, 114, 206, 0.3);
         }
-        .logo-area h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px; }
+        .logo-area h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: 0.5px; }
         .logo-area span { color: var(--neon-blue); }
 
-        .nav-pills { 
-            display: flex; gap: 0.5rem; background: rgba(0,0,0,0.4); padding: 6px; 
-            border-radius: var(--radius-md); border: 1px solid var(--border); flex-wrap: wrap;
-        }
-        .nav-pills a { 
-            color: var(--text-dim); text-decoration: none; font-weight: 600; 
-            padding: 0.6rem 1.2rem; border-radius: var(--radius-sm); transition: var(--transition); 
-            font-size: 0.95rem; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
-        }
-        .nav-pills a:hover { color: var(--text-main); background: var(--surface-hover); }
-        .nav-pills a.active { background: var(--neon-blue); color: #fff; box-shadow: 0 0 10px var(--neon-blue-glow); }
-
-        .header-controls { display: flex; align-items: center; gap: 1rem; }
+        .header-controls { display: flex; align-items: center; gap: 0.8rem; }
         .btn { 
             background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-main); 
             padding: 0 1.2rem; border-radius: var(--radius-sm); cursor: pointer; 
-            font-weight: 600; font-size: 0.95rem; font-family: var(--font-main); 
+            font-weight: 600; font-size: 0.9rem; font-family: var(--font-main); 
             transition: var(--transition); min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
         }
         .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
-        .btn-blue { background: var(--neon-blue); border-color: transparent; color: #fff; box-shadow: 0 4px 15px var(--neon-blue-glow); }
-        .btn-blue:hover { background: #0084f0; transform: translateY(-2px); box-shadow: 0 6px 20px var(--neon-blue-glow); }
-        .btn-danger { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: var(--neon-red); }
-        .btn-danger:hover { background: var(--neon-red); color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
-        .btn-green { background: var(--neon-green); border-color: transparent; color: #000; box-shadow: 0 4px 15px var(--neon-green-glow); }
-        .btn-green:hover { background: #34d399; transform: translateY(-2px); }
+        .btn-blue { background: var(--neon-blue); border-color: transparent; }
+        .btn-amber { background: var(--neon-amber); color: #000; font-weight: 800; border: none; }
+        .btn-purple { background: var(--neon-purple); border-color: transparent; }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--neon-red); border-color: rgba(239, 68, 68, 0.3); }
 
-        /* Status Indicator */
-        .status-badge {
-            display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.5);
-            padding: 0 1rem; border-radius: 30px; height: 36px; border: 1px solid var(--border);
-            font-size: 0.8rem; font-weight: 600; color: var(--text-dim);
-        }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); transition: var(--transition); }
-        .status-dot.online { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+        /* Screens */
+        .screen { display: none; animation: fadeIn 0.4s ease-out; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Station Sections */
-        .dashboard-content { flex: 1; }
-        .station-section { margin-bottom: 3rem; animation: fadeIn 0.5s ease-out; }
-        .station-header { 
-            display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; 
-            border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;
-        }
-        .station-header h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.5px; }
-        .station-rate { font-family: var(--font-mono); color: var(--text-dim); margin-left: auto; font-size: 1rem; background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 20px; }
-
-        .slot-grid { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; 
-        }
-
-        /* Slot Buttons */
+        /* --- SCREEN: STAFF --- */
+        .station-section { margin-bottom: 3rem; }
+        .station-header { display: flex; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        .station-header h2 { font-size: 1.4rem; font-weight: 800; }
+        .station-rate { font-family: var(--font-mono); color: var(--text-dim); margin-left: auto; font-size: 0.9rem; background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 20px; }
+        .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.2rem; }
         .slot-btn { 
-            background: var(--surface); border: 1px solid var(--border); 
-            border-radius: var(--radius-lg); padding: 1.5rem; cursor: pointer; text-align: center; 
-            transition: var(--transition); position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px;
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; 
+            cursor: pointer; text-align: center; transition: var(--transition); position: relative; overflow: hidden; height: 160px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .slot-btn::before {
-            content: ''; position: absolute; inset: 0; background: radial-gradient(circle at top, rgba(255,255,255,0.05), transparent); opacity: 0; transition: var(--transition); pointer-events: none;
-        }
-        .slot-btn:hover::before { opacity: 1; }
-        .slot-btn:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        
-        .slot-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; transition: var(--transition); }
-        
+        .slot-btn:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-color: var(--text-dim); }
         .slot-btn[data-status="free"] { border-color: rgba(0, 114, 206, 0.2); }
+        .slot-btn[data-status="occupied"] { border-color: rgba(245, 158, 11, 0.3); background: linear-gradient(180deg, var(--surface) 0%, rgba(245, 158, 11, 0.03) 100%); }
+        .slot-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; transition: var(--transition); }
         .slot-btn[data-status="free"] .slot-accent { background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); }
-        .slot-btn[data-status="free"]:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue-glow); }
-        
-        .slot-btn[data-status="occupied"] { background: linear-gradient(180deg, var(--surface) 0%, rgba(245, 158, 11, 0.05) 100%); border-color: rgba(245, 158, 11, 0.3); }
-        .slot-btn[data-status="occupied"] .slot-accent { background: var(--neon-amber); box-shadow: 0 0 10px var(--neon-amber); animation: pulse-border 2s infinite; }
-        .slot-btn[data-status="occupied"]:hover { border-color: var(--neon-amber); }
+        .slot-btn[data-status="occupied"] .slot-accent { background: var(--neon-amber); box-shadow: 0 0 10px var(--neon-amber); animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
-        .slot-title { font-size: 0.85rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
-        .slot-number { font-size: 2.5rem; font-weight: 800; font-family: var(--font-mono); line-height: 1; }
-        .slot-timer { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; color: var(--neon-amber); margin: 0.5rem 0; text-shadow: 0 0 10px var(--neon-amber-glow); }
-        .slot-customer { font-size: 0.9rem; color: var(--text-main); font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; margin-top: auto; }
+        .slot-num { font-size: 2.2rem; font-weight: 800; font-family: var(--font-mono); line-height: 1; }
+        .slot-timer { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; color: var(--neon-amber); margin: 0.5rem 0; text-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
+        .slot-name { font-size: 0.85rem; color: var(--text-dim); background: rgba(0,0,0,0.3); padding: 2px 10px; border-radius: 12px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- SCREEN: OWNER --- */
+        .stats-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem; position: relative; }
+        .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; border-radius: 0 0 5px 5px; }
+        .stat-card.blue::after { background: var(--neon-blue); }
+        .stat-card.amber::after { background: var(--neon-amber); }
+        .stat-card.green::after { background: var(--neon-green); }
+        .stat-label { font-size: 0.8rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .stat-val { font-size: 1.8rem; font-weight: 800; font-family: var(--font-mono); }
+        
+        .search-area { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; }
+        .search-area input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 0.7rem 1.2rem; border-radius: var(--radius-sm); font-family: var(--font-main); font-size: 0.95rem; }
+        .search-area input:focus { outline: none; border-color: var(--neon-amber); }
+
+        .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { padding: 1rem 1.5rem; text-align: left; background: rgba(0,0,0,0.2); font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
+
+        /* --- SCREEN: ANALYTICS --- */
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
+        .chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; }
+        .chart-header { margin-bottom: 1rem; font-weight: 700; text-transform: uppercase; font-size: 0.9rem; }
+        .chart-wrap { height: 250px; position: relative; }
 
         /* Modals */
         .modal-overlay { 
             position: fixed; inset: 0; background: rgba(5, 5, 8, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-            display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;
-            opacity: 0; visibility: hidden; transition: var(--transition);
+            z-index: 2000; display: none; align-items: center; justify-content: center; padding: 1rem;
         }
-        .modal-overlay.open { opacity: 1; visibility: visible; }
-        .modal { 
-            background: var(--surface); width: 100%; max-width: 480px; border-radius: var(--radius-lg); 
-            padding: 2.5rem; border: 1px solid var(--border); box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px inset rgba(255,255,255,0.05);
-            transform: scale(0.95) translateY(20px); transition: var(--transition); max-height: 90vh; overflow-y: auto;
-        }
-        .modal-overlay.open .modal { transform: scale(1) translateY(0); }
-        
+        .modal-overlay.open { display: flex; animation: modal-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes modal-in { from { opacity:0; transform: scale(0.9); } to { opacity:1; transform: scale(1); } }
+        .modal { background: var(--surface); width: 100%; max-width: 480px; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 2rem; box-shadow: 0 30px 60px rgba(0,0,0,0.8); max-height: 90vh; overflow-y: auto; }
         .modal-header { margin-bottom: 1.5rem; text-align: center; }
-        .modal-header h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; }
-        .modal-subtitle { color: var(--neon-blue); font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; }
-
-        .form-group { margin-bottom: 1.5rem; text-align: start; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
-        .form-control { 
-            width: 100%; padding: 0.8rem 1rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
-            color: var(--text-main); border-radius: var(--radius-sm); font-family: var(--font-main); font-size: 1rem; 
-            transition: var(--transition); min-height: 48px;
-        }
-        .form-control:focus { outline: none; border-color: var(--neon-blue); box-shadow: 0 0 0 3px var(--neon-blue-glow); }
-
-        .timer-display-large { 
-            font-family: var(--font-mono); font-size: 3.5rem; font-weight: 800; color: var(--neon-amber); 
-            text-align: center; padding: 1rem 0; text-shadow: 0 0 20px var(--neon-amber-glow); line-height: 1; letter-spacing: 2px;
-        }
-
-        /* Billing Rows */
-        .billing-card { background: rgba(0,0,0,0.3); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border); }
-        .b-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 0.95rem; }
-        .b-row:last-child { margin-bottom: 0; }
-        .b-label { color: var(--text-dim); }
-        .b-val { font-family: var(--font-mono); font-weight: 700; }
-        .b-grand { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border); font-size: 1.25rem; font-weight: 800; color: var(--neon-green); }
-        .b-grand .b-val { font-size: 1.5rem; }
-
-        /* Food List Accordion */
-        .food-toggle { 
-            width: 100%; background: var(--surface-hover); border: 1px solid var(--border); color: var(--text-main); 
-            padding: 1rem; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; font-family: var(--font-main); 
-            display: flex; justify-content: space-between; align-items: center; transition: var(--transition); margin-bottom: 1rem; min-height: 54px;
-        }
-        .food-toggle:hover { background: rgba(255,255,255,0.08); border-color: var(--neon-blue); }
-        .food-badge { background: var(--neon-amber); color: #000; padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 0.8rem; }
-        .food-container { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; opacity: 0; }
-        .food-container.expanded { max-height: 500px; opacity: 1; margin-bottom: 1.5rem; }
+        .modal-header h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.4rem; }
+        .modal-sub { color: var(--neon-blue); font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; }
         
-        .f-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 0.5rem; }
-        .f-info h4 { font-weight: 600; font-size: 1rem; }
-        .f-info p { font-family: var(--font-mono); color: var(--text-dim); font-size: 0.8rem; margin-top: 2px; }
-        .f-ctrl { display: flex; align-items: center; gap: 1rem; }
-        .f-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
-        .f-btn:hover { background: var(--neon-blue); border-color: var(--neon-blue); color: #fff; }
-        .f-qty { font-family: var(--font-mono); font-weight: 700; width: 20px; text-align: center; font-size: 1.1rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.5rem; text-align: start; }
+        .form-control { width: 100%; padding: 0.8rem 1rem; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: #fff; border-radius: var(--radius-sm); font-family: var(--font-main); }
+        .form-control:focus { outline: none; border-color: var(--neon-blue); }
 
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
+        .billing-card { background: rgba(0,0,0,0.4); border-radius: var(--radius-md); padding: 1.2rem; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .b-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .b-val { font-family: var(--font-mono); font-weight: 700; }
+        .b-total { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed var(--border); font-size: 1.2rem; font-weight: 800; color: var(--neon-green); }
 
-        /* Footer */
-        footer { margin-top: auto; padding: 2rem 1.5rem; text-align: center; background: rgba(0,0,0,0.5); border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-        .qr-box { background: #fff; padding: 12px; border-radius: 16px; display: inline-block; }
-        .qr-box img { width: 100px; height: 100px; display: block; }
-        .footer-text { font-size: 0.9rem; color: var(--text-dim); font-weight: 600; }
-        .wa-link { color: var(--neon-green); text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
-
-        /* Bottom Mobile Nav */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
-            background: rgba(20, 20, 28, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid var(--border); display: none; justify-content: space-around; align-items: center;
-            z-index: 1000; padding: 0 1rem;
+        /* Bottom Nav */
+        .bottom-nav { 
+            position: fixed; bottom: 0; left: 0; right: 0; height: 75px; 
+            background: rgba(20, 20, 28, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000;
         }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: var(--text-dim); text-decoration: none; font-size: 0.7rem; font-weight: 700; gap: 4px;
-            transition: var(--transition); flex: 1; height: 100%;
+        .nav-item { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+            color: var(--text-dim); text-decoration: none; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; flex: 1; height: 100%; transition: var(--transition);
         }
-        .nav-item svg { width: 24px; height: 24px; opacity: 0.6; transition: var(--transition); }
-        .nav-item.active { color: var(--neon-blue); }
-        .nav-item.active svg { opacity: 1; filter: drop-shadow(0 0 5px var(--neon-blue)); }
+        .nav-item svg { width: 24px; height: 24px; opacity: 0.5; transition: var(--transition); }
+        .nav-item.active { color: var(--text-main); }
+        .nav-item.active svg { opacity: 1; transform: scale(1.1); }
+        
+        .active-staff { color: var(--neon-blue); }
+        .active-owner { color: var(--neon-amber); }
+        .active-analytics { color: var(--neon-purple); }
 
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse-border { 0% { box-shadow: 0 0 5px var(--neon-amber); } 50% { box-shadow: 0 0 15px var(--neon-amber); } 100% { box-shadow: 0 0 5px var(--neon-amber); } }
+        /* Shared Footer Fix */
+        footer { margin-top: 2rem; text-align: center; border-top: 1px solid var(--border); padding: 2rem 1.5rem 1rem; position: relative; z-index: 500; }
+        .footer-logo { font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .footer-text { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.8rem; font-weight: 600; }
+        .wa-link { color: var(--neon-green); text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .wa-link:hover { text-decoration: underline; }
 
-        /* Loading */
-        #loader { position: fixed; inset: 0; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem; transition: opacity 0.5s; }
-        .spinner { width: 60px; height: 60px; border: 4px solid var(--surface-hover); border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        /* Print Override */
+        @media print {
+            .no-print, .bottom-nav, .app-header { display: none !important; }
+            body { background: #fff !important; color: #000 !important; }
+            .container { padding: 0 !important; }
+            .stat-card { border: 1px solid #ccc !important; background: #f9f9f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .chart-box { border: 1px solid #ccc !important; page-break-inside: avoid; margin-bottom: 1rem; }
+            .stat-val { color: #000 !important; }
+        }
 
-        /* RTL adjustments */
-        [dir="rtl"] .station-rate { margin-left: 0; margin-right: auto; }
-        [dir="rtl"] .f-info { text-align: right; }
-
-        /* Responsive */
+        /* Mobile specific spacing */
         @media (max-width: 768px) {
-            .app-header { padding: 1rem; justify-content: center; }
-            .nav-pills { display: none; } /* Hide top pills on mobile */
-            .bottom-nav { display: flex; } /* Show bottom nav on mobile */
-            .slot-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-            .slot-btn { height: 160px; padding: 1rem; }
-            .slot-number { font-size: 2rem; }
-            .timer-display-large { font-size: 2.5rem; }
-            .f-ctrl { gap: 0.5rem; }
-            .container { padding-bottom: 90px; } /* Space for bottom nav */
+            .slot-grid { grid-template-columns: 1fr 1fr; }
+            .container { padding: 1rem; padding-bottom: 120px; }
+            .stats-summary { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
         }
     </style>
 </head>
-<body>
-    <div id="loader">
-        <div class="ps-logo" style="width: 80px; height: 80px; font-size: 2rem; border-radius: 20px;">PS</div>
-        <div class="spinner"></div>
-    </div>
-    <div class="ambient-bg"></div>
-
+<body class="staff">
+    
     <div class="container">
+        <!-- GLOBAL HEADER -->
         <header class="app-header">
             <div class="logo-area">
                 <div class="ps-logo">PS</div>
-                <h1>PS<span>Cafe</span></h1>
+                <h1 id="header-title">PS<span>Cafe</span> • <small data-en="Staff" data-ar="الموظفين">Staff</small></h1>
             </div>
-            <nav class="nav-pills">
-                <a href="./index.html" class="active" data-en="Staff" data-ar="الموظفين">Staff</a>
-                <a href="./owner.html" data-en="Owner Summary" data-ar="ملخص المالك">Owner Summary</a>
-                <a href="./dashboard.html" data-en="Analytics" data-ar="تحليلات">Analytics</a>
-            </nav>
             <div class="header-controls">
-                <div class="status-badge">
-                    <div id="net-dot" class="status-dot online"></div>
-                    <span id="net-txt">Online</span>
-                </div>
                 <button id="lang-toggle" class="btn">العربية</button>
             </div>
         </header>
 
-        <main class="dashboard-content" id="dashboard"></main>
-    </div>
-
-    <!-- Start Modal -->
-    <div class="modal-overlay" id="start-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 data-en="Start Session" data-ar="بدء الجلسة">Start Session</h2>
-                <div class="modal-subtitle" id="start-subtitle">PS5 Room - Device 1</div>
-            </div>
-            <div class="form-group">
-                <label data-en="Customer Name (Optional)" data-ar="اسم الزبون (اختياري)">Customer Name (Optional)</label>
-                <input type="text" id="cust-name-input" class="form-control" placeholder="Guest" autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label data-en="Start Time" data-ar="وقت البداية">Start Time</label>
-                <input type="time" id="start-time-input" class="form-control">
-            </div>
-            <div id="start-error" style="color: var(--neon-red); font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
-            <div style="display: flex; gap: 1rem;">
-                <button class="btn btn-blue" id="btn-start" style="flex: 2;" data-en="Start Session" data-ar="ابدأ الجلسة">Start Session</button>
-                <button class="btn cls-modal" style="flex: 1;" data-en="Cancel" data-ar="إلغاء">Cancel</button>
-            </div>
+        <!-- SCREEN: STAFF -->
+        <div id="screen-staff" class="screen active">
+            <main id="staff-dashboard"></main>
         </div>
-    </div>
 
-    <!-- Manage Modal -->
-    <div class="modal-overlay" id="manage-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 data-en="Manage Session" data-ar="إدارة الجلسة">Manage Session</h2>
-                <div class="modal-subtitle" id="manage-subtitle">PS5 Room - Device 1</div>
-            </div>
-            <div class="timer-display-large" id="live-timer">00:00:00</div>
-            
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                    <label data-en="Edit Start Time" data-ar="تعديل وقت البداية">Edit Start Time</label>
-                    <input type="time" id="edit-time-input" class="form-control">
+        <!-- SCREEN: OWNER -->
+        <div id="screen-owner" class="screen">
+            <div class="stats-summary">
+                <div class="stat-card blue">
+                    <div class="stat-label" data-en="Total Sessions" data-ar="إجمالي الجلسات">Total Sessions</div>
+                    <div id="o-sessions" class="stat-val">0</div>
                 </div>
-                <button class="btn" id="btn-update-time" style="align-self: flex-end;" data-en="Update" data-ar="تحديث">Update</button>
-            </div>
-
-            <button class="food-toggle" id="btn-food-toggle">
-                <span data-en="Add Food & Drinks" data-ar="إضافة طلبات">Add Food & Drinks</span>
-                <span class="food-badge" id="food-badge" style="display:none;">0</span>
-            </button>
-            <div class="food-container" id="food-list">
-                <!-- Populated via JS -->
-            </div>
-
-            <div class="billing-card">
-                <div class="b-row">
-                    <span class="b-label" data-en="Gaming Rate" data-ar="وقت اللعب">Gaming Rate</span>
-                    <span class="b-val" id="live-gaming">0.00</span>
+                <div class="stat-card amber">
+                    <div class="stat-label" data-en="Gaming Revenue" data-ar="إيرادات اللعب">Gaming Revenue</div>
+                    <div id="o-gaming" class="stat-val">0.00</div>
                 </div>
-                <div class="b-row">
-                    <span class="b-label" data-en="Food & Drinks" data-ar="الطلبات">Food & Drinks</span>
-                    <span class="b-val" id="live-food">0.00</span>
+                <div class="stat-card green">
+                    <div class="stat-label" data-en="Food Revenue" data-ar="إيرادات الطلبات">Food Revenue</div>
+                    <div id="o-food" class="stat-val">0.00</div>
                 </div>
-                <div class="b-row b-grand">
-                    <span data-en="Current Total" data-ar="الإجمالي الحالي">Current Total</span>
-                    <span class="b-val" id="live-grand">0.00 EGP</span>
+                <div class="stat-card" style="background:rgba(255,255,255,0.03);">
+                    <div class="stat-label" data-en="Gross Total" data-ar="الإجمالي">Gross Total</div>
+                    <div id="o-total" class="stat-val">0.00</div>
                 </div>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <button class="btn btn-danger" id="btn-pre-end" style="padding: 1.2rem; font-size: 1.1rem;" data-en="End Session & Checkout" data-ar="إنهاء الجلسة والدفع">End Session & Checkout</button>
-                <button class="btn cls-modal" data-en="Close window" data-ar="إغلاق النافذة">Close window</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Checkout Modal -->
-    <div class="modal-overlay" id="checkout-modal">
-        <div class="modal" style="border-color: rgba(16, 185, 129, 0.4);">
-            <div class="modal-header">
-                <h2 style="color: var(--neon-green);" data-en="Checkout Confirm" data-ar="تأكيد الدفع">Checkout Confirm</h2>
             </div>
             
-            <div class="billing-card">
-                <div class="b-row">
-                    <span class="b-label" data-en="Play Duration" data-ar="مدة اللعب">Play Duration</span>
-                    <span class="b-val" id="check-dur" style="color: var(--neon-amber);">00:00:00</span>
-                </div>
-                <div class="b-row">
-                    <span class="b-label" data-en="Gaming" data-ar="اللعب">Gaming</span>
-                    <span class="b-val" id="check-gam">0.00</span>
-                </div>
-                <div class="b-row">
-                    <span class="b-label" data-en="Food & Drinks" data-ar="الطلبات">Food & Drinks</span>
-                    <span class="b-val" id="check-food">0.00</span>
-                </div>
-                <div class="form-group" style="margin-top: 1rem; margin-bottom: 0;">
-                    <label data-en="Custom Discount" data-ar="خصم إضافي">Custom Discount</label>
-                    <input type="number" id="discount-input" class="form-control" placeholder="0" min="0" style="height: 40px; min-height: 40px;">
-                </div>
-                <div class="b-row b-grand">
-                    <span data-en="Final Amount" data-ar="المبلغ النهائي">Final Amount</span>
-                    <span class="b-val" id="check-grand">0.00 EGP</span>
-                </div>
+            <div class="search-area">
+                <input type="text" id="owner-search" placeholder="Search customer, station, or date...">
+                <button class="btn btn-danger" id="btn-reset-db" data-en="Clear All" data-ar="محو السجل">Clear All</button>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <button class="btn btn-green" id="btn-confirm-pay" style="padding: 1.2rem; font-size: 1.1rem; color:#000;" data-en="Confirm Payment" data-ar="تأكيد تحصيل المبلغ">Confirm Payment</button>
-                <button class="btn" id="btn-back-manage" data-en="Back to Session" data-ar="رجوع للجلسة">Back to Session</button>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-en="Date" data-ar="التاريخ">Date</th>
+                            <th data-en="Customer" data-ar="الزبون">Customer</th>
+                            <th data-en="Station" data-ar="الجهاز">Station</th>
+                            <th data-en="Duration" data-ar="المدة">Duration</th>
+                            <th data-en="Total" data-ar="الإجمالي">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="owner-table-body"></tbody>
+                </table>
             </div>
         </div>
+
+        <!-- SCREEN: ANALYTICS -->
+        <div id="screen-analytics" class="screen">
+            <div class="tools-bar no-print" style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+                <div class="form-group" style="margin-bottom:0;"><input type="date" id="date-from" class="form-control"></div>
+                <div class="form-group" style="margin-bottom:0;"><input type="date" id="date-to" class="form-control"></div>
+                <button onclick="window.print()" class="btn btn-purple" data-en="Print PDF" data-ar="طباعة PDF">Print PDF</button>
+                <div id="analytics-tag" style="margin-left:auto; color:var(--text-dim); font-size:0.8rem; align-self:center;"></div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-header" data-en="Income Split" data-ar="توزيع الإيرادات">Income Split</div>
+                    <div class="chart-wrap"><canvas id="ch-split"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header" data-en="Revenue by Station" data-ar="الإيرادات حسب الجهاز">Revenue by Station</div>
+                    <div class="chart-wrap"><canvas id="ch-station"></canvas></div>
+                </div>
+                <div class="chart-box" style="grid-column: 1 / -1;">
+                    <div class="chart-header" data-en="Daily Traffic" data-ar="الإقبال اليومي">Daily Traffic</div>
+                    <div class="chart-wrap"><canvas id="ch-daily"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-logo">PS<span>Cafe Manager</span></div>
+            <div class="footer-text" data-en="Powered & Designed by Eng Ahmed Hany" data-ar="تم التطوير والتصميم بواسطة المهندس أحمد هاني">Powered & Designed by Eng Ahmed Hany</div>
+            <a href="https://wa.me/201065232774" class="wa-link" target="_blank">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a10.1 10.1 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <span dir="ltr" style="display:inline-block; font-family: monospace; letter-spacing: 1px;">+20 1065232774</span>
+            </a>
+        </footer>
     </div>
 
-    <footer>
-        <div class="qr-box">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fahmed-hany-aou.github.io%2Fcard%2Findex" alt="QR Code">
-        </div>
-        <div class="footer-text" data-en="Powered & Designed by Eng Ahmed Hany" data-ar="تم التطوير والتصميم بواسطة المهندس أحمد هاني">Powered & Designed by Eng Ahmed Hany</div>
-        <a href="https://wa.me/201065232774" class="wa-link" target="_blank">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a10.1 10.1 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            <span dir="ltr" style="display:inline-block; font-family: monospace;">+20 1065232774</span>
-        </a>
-    </footer>
-
+    <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
-        <a href="./index.html" class="nav-item active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 12h12M6 8h12M6 16h12"/></svg>
+        <a href="#" onclick="app.switchScreen('staff')" class="nav-item active" id="nav-staff">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 12h12M6 8h12M6 16h12"/></svg>
             <span data-en="Staff" data-ar="الموظفين">Staff</span>
         </a>
-        <a href="./owner.html" class="nav-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+        <a href="#" onclick="app.switchScreen('owner')" class="nav-item" id="nav-owner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M2 12h20"/></svg>
             <span data-en="Owner" data-ar="المالك">Owner</span>
         </a>
-        <a href="./dashboard.html" class="nav-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-4 4 4 5-5"/></svg>
+        <a href="#" onclick="app.switchScreen('analytics')" class="nav-item" id="nav-analytics">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18M7 16l4-4 4 4 5-5"/></svg>
             <span data-en="Analytics" data-ar="تحليلات">Analytics</span>
         </a>
     </nav>
 
+    <!-- Global Modals -->
+    <div class="modal-overlay" id="modal-start">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 data-en="Start Session" data-ar="بدء الجلسة">Start Session</h2>
+                <div class="modal-sub" id="start-device-info">Device Info</div>
+            </div>
+            <div class="form-group">
+                <label data-en="Customer Name" data-ar="اسم الزبون">Customer Name</label>
+                <input type="text" id="input-cust-name" class="form-control" placeholder="Guest" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label data-en="Start Time" data-ar="وقت البداية">Start Time</label>
+                <input type="time" id="input-start-time" class="form-control">
+            </div>
+            <div id="start-error" style="color:var(--neon-red); font-size:0.8rem; margin-bottom:1rem; display:none;"></div>
+            <div style="display:flex; gap:1rem;">
+                <button class="btn btn-blue" id="btn-do-start" style="flex:2;" data-en="Start Now" data-ar="ابدأ الآن">Start Now</button>
+                <button class="btn" onclick="app.closeModals()" style="flex:1;" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-manage">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 data-en="Session Details" data-ar="تفاصيل الجلسة">Session Details</h2>
+                <div class="modal-sub" id="manage-device-info">Device Info</div>
+            </div>
+            <div style="text-align:center; margin-bottom:1.5rem;">
+                <div id="m-timer" style="font-family:var(--font-mono); font-size:2.8rem; font-weight:800; color:var(--neon-amber);">00:00:00</div>
+            </div>
+            
+            <button class="btn" style="width:100%; margin-bottom:1rem;" id="btn-toggle-food" data-en="Add Food / Drinks" data-ar="إضافة طلبات">Add Food / Drinks</button>
+            <div id="food-list" style="display:none; max-height:220px; overflow-y:auto; margin-bottom:1.5rem; background:rgba(0,0,0,0.2); padding:1rem; border-radius:12px;"></div>
+
+            <div class="billing-card">
+                <div class="b-row"><span data-en="Gaming" data-ar="اللعب">Gaming</span><span class="b-val" id="m-billing-game">0.00</span></div>
+                <div class="b-row"><span data-en="Food" data-ar="الطلبات">Food</span><span class="b-val" id="m-billing-food">0.00</span></div>
+                <div class="b-row b-total"><span data-en="Current Total" data-ar="الإجمالي الحالي">Current Total</span><span class="b-val" id="m-billing-total">0.00</span></div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:0.8rem;">
+                <button class="btn btn-danger" id="btn-pre-checkout" style="padding:1rem;" data-en="End & Checkout" data-ar="إنهاء وحساب">End & Checkout</button>
+                <button class="btn" onclick="app.closeModals()" data-en="Close" data-ar="إغلاق">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-checkout">
+        <div class="modal" style="border-color:var(--neon-green);">
+            <div class="modal-header"><h2 style="color:var(--neon-green);" data-en="Payment Due" data-ar="مطلوب للدفع">Payment Due</h2></div>
+            <div class="billing-card">
+                <div class="b-row"><span data-en="Duration" data-ar="المدة">Duration</span><span class="b-val" id="c-dur">00:00:00</span></div>
+                <div class="b-row"><span data-en="Subtotal" data-ar="الإجمالي">Subtotal</span><span class="b-val" id="c-sub">0.00</span></div>
+                <div class="form-group" style="margin-top:1rem; margin-bottom:0;">
+                    <label data-en="Discount (EGP)" data-ar="خصم (ج.م)">Discount (EGP)</label>
+                    <input type="number" id="c-discount" class="form-control" value="0">
+                </div>
+                <div class="b-row b-total"><span data-en="Final Payable" data-ar="الصافي للدفع">Final Payable</span><span class="b-val" id="c-final">0.00</span></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.8rem;">
+                <button class="btn btn-blue" id="btn-complete-pay" style="padding:1.2rem; font-size:1.1rem; color:#fff;" data-en="Confirm Payment" data-ar="تأكيد الدفع">Confirm Payment</button>
+                <button class="btn" id="btn-back-manage" data-en="Back" data-ar="رجوع">Back</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Integrated Config
+        // CONFIG
         const CONFIG = {
             stations: [
-                { id: "ps4p", nameEn: "PS4 Partition", nameAr: "PS4 صالة", rate: 30, slots: 6 },
-                { id: "ps4r", nameEn: "PS4 Private",   nameAr: "PS4 غرفة",  rate: 50, slots: 4 },
-                { id: "ps5p", nameEn: "PS5 Partition", nameAr: "PS5 صالة", rate: 60, slots: 4 },
-                { id: "ps5r", nameEn: "PS5 Private",   nameAr: "PS5 غرفة",  rate: 100, slots: 2 }
+                { id: "ps4p", nEn: "PS4 Partition", nAr: "PS4 صالة", rate: 30, slots: 6 },
+                { id: "ps4r", nEn: "PS4 Private", nAr: "PS4 غرفة", rate: 50, slots: 4 },
+                { id: "ps5p", nEn: "PS5 Partition", nAr: "PS5 صالة", rate: 60, slots: 4 },
+                { id: "ps5r", nEn: "PS5 Private", nAr: "PS5 غرفة", rate: 100, slots: 2 }
             ],
             food: [
-                { id: "cola",     nameEn: "Cola",     nameAr: "كولا",       price: 15 },
-                { id: "tea",      nameEn: "Tea",      nameAr: "شاي",        price: 10 },
-                { id: "water",    nameEn: "Water",    nameAr: "مياه",       price: 5 },
-                { id: "sandwich", nameEn: "Sandwich", nameAr: "ساندوتش",    price: 25 },
-                { id: "coffee",   nameEn: "Coffee",   nameAr: "قهوة",       price: 20 },
-                { id: "chips",    nameEn: "Chips",    nameAr: "شيبسي",      price: 10 }
+                { id: "cola", nEn: "Cola", nAr: "كولا", price: 15 },
+                { id: "tea", nEn: "Tea", nAr: "شاي", price: 10 },
+                { id: "water", nEn: "Water", nAr: "مياه", price: 5 },
+                { id: "sand", nEn: "Coffee", nAr: "قهوة", price: 20 }
             ],
-            // Google sheet URL for background sync (dev analytics)
-            gsUrl: "https://script.google.com/macros/s/AKfycbxwPUEumOv3TdpxRjsMALTBrxzYRVAusB-BAxhrdv7HDUh_4ONs1FbFNfyHVlPJBMg/exec"
+            // Google sheet for background sync
+            syncUrl: "https://script.google.com/macros/s/AKfycbxwPUEumOv3TdpxRjsMALTBrxzYRVAusB-BAxhrdv7HDUh_4ONs1FbFNfyHVlPJBMg/exec"
         };
 
-        class App {
+        class PlayStationApp {
             constructor() {
+                this.screen = 'staff';
                 this.lang = localStorage.getItem('ps-lang') || 'en';
                 this.active = JSON.parse(localStorage.getItem('ps-active')) || [];
-                this.completed = JSON.parse(localStorage.getItem('ps-completed')) || [];
+                this.history = JSON.parse(localStorage.getItem('ps-completed')) || [];
                 this.pending = JSON.parse(localStorage.getItem('ps-pending')) || [];
                 
-                this.editSession = null;
-                this.selectedSlot = null;
-                
-                window._app = this;
+                this.sessionEdit = null;
+                this.slotSelected = null;
+                this.charts = [];
+
                 this.init();
             }
 
             init() {
                 this.applyLang();
-                this.renderDashboard();
+                this.renderStaff();
                 this.bindEvents();
-                
-                setInterval(() => this.tickTimers(), 1000);
-                
-                // Network check
-                this.updateNet();
-                window.addEventListener('online', () => { this.updateNet(); this.syncPending(); });
-                window.addEventListener('offline', () => this.updateNet());
-                
-                setTimeout(() => {
-                    document.getElementById('loader').style.opacity = '0';
-                    setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-                    this.syncPending(); // Attempt initial sync
-                }, 800);
+                setInterval(() => this.tick(), 1000);
+                setTimeout(() => this.backgroundSync(), 2000);
             }
 
-            cur() { return this.lang === 'ar' ? 'ج.م' : 'EGP'; }
+            // --- NAVIGATION ---
+            switchScreen(scr) {
+                this.screen = scr;
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(`screen-${scr}`).classList.add('active');
+                
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active', 'active-staff', 'active-owner', 'active-analytics'));
+                const curNav = document.getElementById(`nav-${scr}`);
+                curNav.classList.add('active', `active-${scr}`);
+                
+                document.body.className = scr;
+                
+                const titleMap = { staff: 'Staff', owner: 'Owner Summary', analytics: 'Analytics' };
+                const arMap = { staff: 'الموظفين', owner: 'ملخص المالك', analytics: 'التحليلات' };
+                document.getElementById('header-title').innerHTML = `PS<span>Cafe</span> • <small>${this.lang === 'en' ? titleMap[scr] : arMap[scr]}</small>`;
+
+                if (scr === 'owner') this.renderOwner();
+                if (scr === 'analytics') this.renderAnalytics();
+            }
 
             applyLang() {
                 document.documentElement.dir = this.lang === 'ar' ? 'rtl' : 'ltr';
-                document.documentElement.lang = this.lang;
                 document.getElementById('lang-toggle').textContent = this.lang === 'en' ? 'العربية' : 'English';
                 document.querySelectorAll('[data-en]').forEach(el => {
                     el.textContent = el.getAttribute(`data-${this.lang}`);
@@ -503,54 +457,26 @@
                 localStorage.setItem('ps-lang', this.lang);
             }
 
-            updateNet() {
-                const isOnline = navigator.onLine;
-                const dot = document.getElementById('net-dot');
-                const txt = document.getElementById('net-txt');
-                dot.className = `status-dot ${isOnline ? 'online' : ''}`;
-                txt.textContent = isOnline ? (this.lang === 'en' ? 'Online' : 'متصل') : (this.lang === 'en' ? 'Offline' : 'غير متصل');
-                if(!isOnline) dot.style.background = 'var(--neon-red)';
-                else dot.style.background = '';
-            }
+            curLabel() { return this.lang === 'ar' ? ' ج.م' : ' EGP'; }
 
             save() {
                 localStorage.setItem('ps-active', JSON.stringify(this.active));
-                localStorage.setItem('ps-completed', JSON.stringify(this.completed));
+                localStorage.setItem('ps-completed', JSON.stringify(this.history));
                 localStorage.setItem('ps-pending', JSON.stringify(this.pending));
             }
 
-            // Calculation Logic
-            elapsed(isoString) {
-                const ms = Math.max(0, Date.now() - new Date(isoString).getTime());
-                const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
-                return { 
-                    str: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`, 
-                    mins: ms/60000, ms 
-                };
-            }
-
-            calcFood(session) {
-                return Object.entries(session.foodCart || {}).reduce((t, [id, qty]) => {
-                    const item = CONFIG.food.find(f => f.id === id);
-                    return t + ((item ? item.price : 0) * qty);
-                }, 0);
-            }
-
-            // Render Functions
-            renderDashboard() {
-                const dash = document.getElementById('dashboard');
+            // --- STAFF SCREEN ---
+            renderStaff() {
+                const dash = document.getElementById('staff-dashboard');
                 dash.innerHTML = '';
-                
                 CONFIG.stations.forEach(st => {
                     const sec = document.createElement('section');
                     sec.className = 'station-section';
-                    
-                    const name = this.lang === 'en' ? st.nameEn : st.nameAr;
-                    
+                    const name = this.lang === 'en' ? st.nameEn || st.nEn : st.nameAr || st.nAr;
                     sec.innerHTML = `
                         <div class="station-header">
                             <h2>${name}</h2>
-                            <div class="station-rate">${st.rate} ${this.cur()} / ${this.lang === 'en' ? 'hr' : 'س'}</div>
+                            <div class="station-rate">${st.rate}${this.curLabel()} / ${this.lang === 'en' ? 'hr' : 'س'}</div>
                         </div>
                         <div class="slot-grid" id="grid-${st.id}"></div>
                     `;
@@ -564,338 +490,207 @@
                         btn.dataset.status = sess ? 'occupied' : 'free';
                         
                         if (sess) {
-                            const cname = sess.name || sess.custName || (this.lang === 'en' ? 'Guest' : 'ضيف');
-                            btn.innerHTML = `
-                                <div class="slot-title">${this.lang === 'en' ? 'Device' : 'جهاز'} ${i}</div>
-                                <div class="slot-timer" id="tmr-${st.id}-${i}">00:00:00</div>
-                                <div class="slot-customer">${cname}</div>
-                                <div class="slot-accent"></div>
-                            `;
+                            btn.innerHTML = `<div class="slot-timer" id="timer-${st.id}-${i}">00:00:00</div>
+                                             <div class="slot-name">${sess.name || 'Guest'}</div>
+                                             <div class="slot-accent"></div>`;
                             btn.onclick = () => this.openManage(sess.id);
                         } else {
-                            btn.innerHTML = `
-                                <div class="slot-title">${this.lang === 'en' ? 'Device' : 'جهاز'}</div>
-                                <div class="slot-number">${i}</div>
-                                <div class="slot-accent"></div>
-                            `;
+                            btn.innerHTML = `<div class="slot-num">${i}</div><div class="slot-accent"></div>`;
                             btn.onclick = () => this.openStart(st.id, i);
                         }
-                        
                         grid.appendChild(btn);
                     }
                 });
             }
 
-            renderFoodList() {
-                const list = document.getElementById('food-list');
-                list.innerHTML = '';
-                
-                CONFIG.food.forEach(item => {
-                    const qty = this.editSession?.foodCart?.[item.id] || 0;
-                    const name = this.lang === 'en' ? item.nameEn : item.nameAr;
-                    
-                    const div = document.createElement('div');
-                    div.className = 'f-item';
-                    div.innerHTML = `
-                        <div class="f-info">
-                            <h4>${name}</h4>
-                            <p>${item.price} ${this.cur()}</p>
-                        </div>
-                        <div class="f-ctrl">
-                            <button class="f-btn" onclick="window._app.updateFood('${item.id}', -1)">-</button>
-                            <span class="f-qty">${qty}</span>
-                            <button class="f-btn" onclick="window._app.updateFood('${item.id}', 1)">+</button>
-                        </div>
-                    `;
-                    list.appendChild(div);
+            // --- OWNER SCREEN ---
+            renderOwner() {
+                const query = document.getElementById('owner-search').value.toLowerCase();
+                const data = this.history.filter(h => {
+                    const dateStr = new Date(h.endTime).toLocaleDateString();
+                    return h.name?.toLowerCase().includes(query) || (h.stationName||'').toLowerCase().includes(query) || dateStr.includes(query);
                 });
-                
-                const count = Object.values(this.editSession?.foodCart || {}).reduce((a,b)=>a+b, 0);
-                const badge = document.getElementById('food-badge');
-                badge.textContent = count;
-                badge.style.display = count > 0 ? 'block' : 'none';
+
+                const gTotal = data.reduce((a, b) => a + (Number(b.gamingTotal)||0), 0);
+                const fTotal = data.reduce((a, b) => a + (Number(b.foodTotal)||0), 0);
+                const gross = data.reduce((a, b) => a + (Number(b.grandTotal)||0), 0);
+
+                document.getElementById('o-sessions').textContent = data.length;
+                document.getElementById('o-gaming').textContent = gTotal.toFixed(2);
+                document.getElementById('o-food').textContent = fTotal.toFixed(2);
+                document.getElementById('o-total').textContent = gross.toFixed(2);
+
+                const tbody = document.getElementById('owner-table-body');
+                tbody.innerHTML = '';
+                [...data].reverse().slice(0, 100).forEach(h => {
+                    const tr = document.createElement('tr');
+                    const dt = new Date(h.endTime);
+                    tr.innerHTML = `
+                        <td style="font-family:var(--font-mono); opacity:0.7;">${dt.toLocaleDateString()} ${dt.getHours()}:${dt.getMinutes()}</td>
+                        <td style="font-weight:600;">${h.name || 'Guest'}</td>
+                        <td><span style="background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:5px;">${h.stationName} #${h.slot}</span></td>
+                        <td style="color:var(--neon-amber); font-weight:700;">${h.duration}</td>
+                        <td style="color:var(--neon-green); font-weight:800;">${Number(h.grandTotal).toFixed(0)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             }
 
-            tickTimers() {
-                // Dashboard Timers
-                this.active.forEach(s => {
-                    const el = document.getElementById(`tmr-${s.stid}-${s.slot}`);
-                    if (el) el.textContent = this.elapsed(s.start || s.startTime).str;
+            // --- ANALYTICS SCREEN ---
+            renderAnalytics() {
+                this.charts.forEach(c => c.destroy());
+                this.charts = [];
+                if (!this.history.length) return;
+
+                const extract = { station: {}, daily: {}, game: 0, food: 0 };
+                this.history.forEach(h => {
+                    const st = h.stationName || 'PS';
+                    extract.station[st] = (extract.station[st] || 0) + Number(h.grandTotal);
+                    const d = h.endTime.split('T')[0];
+                    extract.daily[d] = (extract.daily[d] || 0) + 1;
+                    extract.game += Number(h.gamingTotal);
+                    extract.food += Number(h.foodTotal);
                 });
-                
-                // Modal Manager
-                if (this.editSession) {
-                    const st = CONFIG.stations.find(x => x.id === this.editSession.stid);
-                    if(!st) return;
-                    
-                    const el = this.elapsed(this.editSession.start || this.editSession.startTime);
-                    const gaming = (st.rate / 60) * el.mins;
-                    const food = this.calcFood(this.editSession);
-                    
-                    document.getElementById('live-timer').textContent = el.str;
-                    document.getElementById('live-gaming').textContent = `${gaming.toFixed(2)} ${this.cur()}`;
-                    document.getElementById('live-food').textContent = `${food.toFixed(2)} ${this.cur()}`;
-                    document.getElementById('live-grand').textContent = `${(gaming + food).toFixed(2)} ${this.cur()}`;
+
+                const ctx1 = document.getElementById('ch-split').getContext('2d');
+                this.charts.push(new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: { labels: ['Gaming', 'Food'], datasets: [{ data: [extract.game, extract.food], backgroundColor: ['#8b5cf6', '#f59e0b'], borderWidth: 0 }] },
+                    options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+                }));
+
+                const ctx2 = document.getElementById('ch-station').getContext('2d');
+                this.charts.push(new Chart(ctx2, {
+                    type: 'bar',
+                    data: { labels: Object.keys(extract.station), datasets: [{ data: Object.values(extract.station), backgroundColor: '#0072ce' }] },
+                    options: { plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                }));
+            }
+
+            // --- LOGIC HELPERS ---
+            elapsed(iso) {
+                const ms = Date.now() - new Date(iso).getTime();
+                const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+                return { s: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`, mins: ms/60000 };
+            }
+
+            tick() {
+                this.active.forEach(s => {
+                    const el = document.getElementById(`timer-${s.stid}-${s.slot}`);
+                    if (el) el.textContent = this.elapsed(s.start).s;
+                });
+                if (this.sessionEdit) {
+                    const st = CONFIG.stations.find(x=>x.id===this.sessionEdit.stid);
+                    const el = this.elapsed(this.sessionEdit.start);
+                    const g = (st.rate/60) * el.mins;
+                    let f = 0; Object.entries(this.sessionEdit.foodCart || {}).forEach(([id, q]) => { f += (CONFIG.food.find(x=>x.id===id).price * q); });
+                    document.getElementById('m-timer').textContent = el.s;
+                    document.getElementById('m-billing-game').textContent = g.toFixed(2);
+                    document.getElementById('m-billing-food').textContent = f.toFixed(2);
+                    document.getElementById('m-billing-total').textContent = (g+f).toFixed(2);
                 }
             }
 
-            // Modal Actions
+            // --- MODAL HANDLING ---
             openStart(stid, slot) {
-                this.selectedSlot = { stid, slot };
-                const st = CONFIG.stations.find(x => x.id === stid);
-                const name = this.lang === 'en' ? st.nameEn : st.nameAr;
-                
-                document.getElementById('start-subtitle').textContent = `${name} • ${this.lang === 'en' ? 'Device' : 'جهاز'} ${slot}`;
-                document.getElementById('cust-name-input').value = '';
-                
-                const d = new Date();
-                document.getElementById('start-time-input').value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                document.getElementById('start-error').style.display = 'none';
-                
-                this.showModal('start-modal');
-                setTimeout(() => document.getElementById('cust-name-input').focus(), 100);
+                this.slotSelected = { stid, slot };
+                const st = CONFIG.stations.find(x=>x.id===stid);
+                document.getElementById('start-device-info').textContent = `${st.nEn} - #${slot}`;
+                document.getElementById('input-start-time').value = new Date().toTimeString().slice(0,5);
+                this.openModal('modal-start');
             }
 
             openManage(id) {
-                this.editSession = this.active.find(s => s.id === id);
-                if(!this.editSession) return;
-                
-                const st = CONFIG.stations.find(x => x.id === this.editSession.stid);
-                const name = this.lang === 'en' ? st.nameEn : st.nameAr;
-                
-                document.getElementById('manage-subtitle').textContent = `${name} • ${this.lang === 'en' ? 'Device' : 'جهاز'} ${this.editSession.slot}`;
-                
-                const d = new Date(this.editSession.start || this.editSession.startTime);
-                document.getElementById('edit-time-input').value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                
-                document.getElementById('food-list').classList.remove('expanded');
-                
-                this.renderFoodList();
-                this.tickTimers();
-                this.showModal('manage-modal');
+                this.sessionEdit = this.active.find(s=>s.id===id);
+                const st = CONFIG.stations.find(x=>x.id===this.sessionEdit.stid);
+                document.getElementById('manage-device-info').textContent = `${st.nEn} - #${this.sessionEdit.slot}`;
+                this.renderFoodMenu();
+                this.openModal('modal-manage');
             }
 
-            // Action Handlers
-            updateFood(id, delta) {
-                if(!this.editSession.foodCart) this.editSession.foodCart = {};
-                const current = this.editSession.foodCart[id] || 0;
-                const next = Math.max(0, current + delta);
-                
-                if (next === 0) delete this.editSession.foodCart[id];
-                else this.editSession.foodCart[id] = next;
-                
+            renderFoodMenu() {
+                const target = document.getElementById('food-list');
+                target.innerHTML = '';
+                CONFIG.food.forEach(f => {
+                    const q = this.sessionEdit.foodCart?.[f.id] || 0;
+                    const d = document.createElement('div');
+                    d.style.display='flex'; d.style.justifyContent='space-between'; d.style.marginBottom='10px';
+                    d.innerHTML = `<span>${f.nEn} (${f.price})</span>
+                                   <div style="display:flex;gap:10px;">
+                                     <button class="btn" style="padding:0 8px;min-height:30px;" onclick="app.editFood('${f.id}',-1)">-</button>
+                                     <span style="font-weight:700;">${q}</span>
+                                     <button class="btn" style="padding:0 8px;min-height:30px;" onclick="app.editFood('${f.id}',1)">+</button>
+                                   </div>`;
+                    target.appendChild(d);
+                });
+            }
+
+            editFood(id, delta) {
+                if(!this.sessionEdit.foodCart) this.sessionEdit.foodCart = {};
+                this.sessionEdit.foodCart[id] = Math.max(0, (this.sessionEdit.foodCart[id]||0) + delta);
+                this.renderFoodMenu();
                 this.save();
-                this.renderFoodList();
-                this.tickTimers();
-            }
-
-            parseTime(timeStr) {
-                const [h, m] = timeStr.split(':').map(Number);
-                const d = new Date();
-                d.setHours(h, m, 0, 0);
-                if (d.getTime() > Date.now()) d.setDate(d.getDate() - 1);
-                return d;
             }
 
             doStart() {
-                const val = document.getElementById('start-time-input').value;
-                const d = this.parseTime(val);
-                const diffH = (Date.now() - d.getTime()) / 3600000;
-                
-                const err = document.getElementById('start-error');
-                if (diffH > 12) {
-                    err.textContent = this.lang === 'en' ? 'Time cannot be > 12 hours ago' : 'لا يمكن اختيار وقت قبل أكثر من 12 ساعة';
-                    err.style.display = 'block';
-                    return;
-                }
-                
-                const name = document.getElementById('cust-name-input').value.trim();
-                
-                const sess = {
-                    id: Date.now().toString(),
-                    stid: this.selectedSlot.stid,
-                    slot: this.selectedSlot.slot,
-                    start: d.toISOString(),
-                    name: name,
-                    foodCart: {}
-                };
-                
-                this.active.push(sess);
-                this.save();
-                this.renderDashboard();
-                this.hideModals();
+                const name = document.getElementById('input-cust-name').value || 'Guest';
+                const time = document.getElementById('input-start-time').value;
+                const d = new Date(); const [h,m] = time.split(':'); d.setHours(h,m,0,0);
+                this.active.push({ id: Date.now().toString(), stid: this.slotSelected.stid, slot: this.slotSelected.slot, name, start: d.toISOString(), foodCart: {} });
+                this.save(); this.renderStaff(); this.closeModals();
             }
 
-            doUpdateStartTime() {
-                if(!this.editSession) return;
-                const val = document.getElementById('edit-time-input').value;
-                const d = this.parseTime(val);
-                const diffH = (Date.now() - d.getTime()) / 3600000;
-                
-                if (diffH > 12 || d.getTime() > Date.now()) return;
-                
-                this.editSession.start = d.toISOString();
-                this.save();
-                this.tickTimers();
+            preCheckout() {
+                const s = this.sessionEdit; const st = CONFIG.stations.find(x=>x.id===s.stid);
+                const el = this.elapsed(s.start); const game = (st.rate/60)*el.mins;
+                let food = 0; Object.entries(s.foodCart||{}).forEach(([id,q])=>{ food+=(CONFIG.food.find(x=>x.id===id).price*q); });
+                document.getElementById('c-dur').textContent = el.s;
+                document.getElementById('c-sub').textContent = (game+food).toFixed(2);
+                document.getElementById('c-final').textContent = (game+food).toFixed(0);
+                this.openModal('modal-checkout');
             }
 
-            goCheckout() {
-                if(!this.editSession) return;
-                const s = this.editSession;
-                const st = CONFIG.stations.find(x => x.id === s.stid);
+            completeCheckout() {
+                const s = this.sessionEdit; const st = CONFIG.stations.find(x=>x.id===s.stid);
+                const el = this.elapsed(s.start); const game = (st.rate/60)*el.mins;
+                let food = 0; Object.entries(s.foodCart||{}).forEach(([id,q])=>{ food+=(CONFIG.food.find(x=>x.id===id).price*q); });
+                const discount = Number(document.getElementById('c-discount').value || 0);
+                const final = Math.max(0, game + food - discount);
                 
-                const el = this.elapsed(s.start || s.startTime);
-                const gaming = (st.rate / 60) * el.mins;
-                const food = this.calcFood(s);
-                
-                document.getElementById('check-dur').textContent = el.str;
-                document.getElementById('check-gam').textContent = `${gaming.toFixed(2)} ${this.cur()}`;
-                document.getElementById('check-food').textContent = `${food.toFixed(2)} ${this.cur()}`;
-                
-                const discInput = document.getElementById('discount-input');
-                discInput.value = '';
-                
-                const updateGrand = () => {
-                    const discount = Number(discInput.value || 0);
-                    const grand = Math.max(0, (gaming + food) - discount);
-                    document.getElementById('check-grand').textContent = `${grand.toFixed(2)} ${this.cur()}`;
-                };
-                
-                discInput.oninput = updateGrand;
-                updateGrand();
-                
-                this.hideModals();
-                this.showModal('checkout-modal');
+                const record = { id: s.id, name: s.name, stid: s.stid, stationName: st.nEn, slot: s.slot, endTime: new Date().toISOString(), duration: el.s, gamingTotal: game.toFixed(2), foodTotal: food.toFixed(2), grandTotal: final.toFixed(2) };
+                this.history.push(record); this.pending.push(record);
+                this.active = this.active.filter(x=>x.id !== s.id);
+                this.sessionEdit = null; this.save(); this.renderStaff(); this.closeModals();
             }
 
-            doConfirm() {
-                if(!this.editSession) return;
-                const s = this.editSession;
-                const st = CONFIG.stations.find(x => x.id === s.stid);
-                
-                const el = this.elapsed(s.start || s.startTime);
-                const gaming = (st.rate / 60) * el.mins;
-                const food = this.calcFood(s);
-                const discount = Number(document.getElementById('discount-input').value || 0);
-                const total = Math.max(0, (gaming + food) - discount);
-                
-                const now = new Date();
-                
-                // Format for Google Sheets
-                const formatSheet = (dt) => {
-                    const d = new Date(dt);
-                    const p = v => String(v).padStart(2,'0');
-                    return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
-                };
-                
-                const record = {
-                    id: s.id,
-                    stid: s.stid,
-                    slot: s.slot,
-                    stationName: this.lang === 'en' ? st.nameEn : st.nameAr,
-                    start: s.start || s.startTime,
-                    endTime: now.toISOString(),
-                    startSheet: formatSheet(s.start || s.startTime),
-                    endSheet: formatSheet(now),
-                    duration: el.str,
-                    name: s.name || s.custName || '',
-                    foodCart: s.foodCart,
-                    gamingTotal: Math.round(gaming * 100) / 100,
-                    foodTotal: Math.round(food * 100) / 100,
-                    discount: discount,
-                    grandTotal: Math.round(total * 100) / 100
-                };
-                
-                this.completed.push(record);
-                this.pending.push(record);
-                this.active = this.active.filter(x => x.id !== s.id);
-                this.editSession = null;
-                
-                this.save();
-                this.renderDashboard();
-                this.hideModals();
-                this.syncPending();
+            async backgroundSync() {
+                if(!navigator.onLine || !this.pending.length) return;
+                const rec = this.pending[0];
+                try {
+                    await fetch(CONFIG.syncUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(rec) });
+                    this.pending.shift(); this.save();
+                } catch(e) {}
+                setTimeout(() => this.backgroundSync(), 5000);
             }
 
-            // Sync Logic
-            async syncPending() {
-                if (!navigator.onLine || !CONFIG.gsUrl || this.pending.length === 0) return;
-                
-                const toSync = [...this.pending];
-                for(const rec of toSync) {
-                    try {
-                        const st = CONFIG.stations.find(x => x.id === rec.stid);
-                        const itemsObj = Object.entries(rec.foodCart || {}).map(([id, qty]) => {
-                            const f = CONFIG.food.find(x => x.id === id);
-                            return { id, name: f?.nameEn || id, qty, price: f?.price || 0 };
-                        });
-                        
-                        const payload = {
-                            id: rec.id,
-                            custName: rec.name || 'Guest',
-                            startTimeSheet: rec.startSheet || '--',
-                            endTimeSheet: rec.endSheet || '--',
-                            duration: rec.duration || '--',
-                            stationName: rec.stationName || 'PS',
-                            slotNumber: rec.slot,
-                            gamingTotal: rec.gamingTotal,
-                            foodTotal: rec.foodTotal,
-                            grandTotal: rec.grandTotal,
-                            foodItems: itemsObj,
-                            discount: rec.discount || 0
-                        };
-                        
-                        await fetch(CONFIG.gsUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                        this.pending = this.pending.filter(x => x.id !== rec.id);
-                    } catch(e) { console.error('Sync error:', e); }
-                }
-                localStorage.setItem('ps-pending', JSON.stringify(this.pending));
-            }
-
-            // UI Utils
-            showModal(id) { document.getElementById(id).classList.add('open'); }
-            hideModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); }
+            openModal(id) { document.getElementById(id).classList.add('open'); }
+            closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); this.sessionEdit = null; }
 
             bindEvents() {
-                // Lang
-                document.getElementById('lang-toggle').onclick = () => {
-                    this.lang = this.lang === 'en' ? 'ar' : 'en';
-                    this.applyLang();
-                    this.renderDashboard();
-                    this.updateNet();
-                };
-                
-                // Modals
-                document.querySelectorAll('.cls-modal').forEach(btn => btn.onclick = () => { this.hideModals(); this.editSession = null; });
-                document.querySelectorAll('.modal-overlay').forEach(ov => ov.onclick = (e) => {
-                    if (e.target === ov) { this.hideModals(); this.editSession = null; }
-                });
-                
-                window.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') { this.hideModals(); this.editSession = null; }
-                });
-
-                // Start
-                document.getElementById('btn-start').onclick = () => this.doStart();
-                document.getElementById('start-time-input').addEventListener('keypress', e => { if(e.key === 'Enter') this.doStart(); });
-                document.getElementById('cust-name-input').addEventListener('keypress', e => { if(e.key === 'Enter') this.doStart(); });
-                
-                // Manage
-                document.getElementById('btn-update-time').onclick = () => this.doUpdateStartTime();
-                document.getElementById('btn-food-toggle').onclick = () => document.getElementById('food-list').classList.toggle('expanded');
-                document.getElementById('btn-pre-end').onclick = () => this.goCheckout();
-                
-                // Checkout
-                document.getElementById('btn-back-manage').onclick = () => {
-                    this.hideModals();
-                    this.showModal('manage-modal');
-                };
-                document.getElementById('btn-confirm-pay').onclick = () => this.doConfirm();
+                document.getElementById('lang-toggle').onclick = () => { this.lang = this.lang === 'en' ? 'ar' : 'en'; this.applyLang(); this.renderStaff(); if(this.screen === 'owner') this.renderOwner(); };
+                document.getElementById('btn-do-start').onclick = () => this.doStart();
+                document.getElementById('btn-toggle-food').onclick = () => { const f = document.getElementById('food-list'); f.style.display = f.style.display==='none'?'block':'none'; };
+                document.getElementById('btn-pre-checkout').onclick = () => this.preCheckout();
+                document.getElementById('btn-complete-pay').onclick = () => this.completeCheckout();
+                document.getElementById('btn-back-manage').onclick = () => { this.closeModals(); this.openModal('modal-manage'); };
+                document.getElementById('owner-search').oninput = () => this.renderOwner();
+                document.getElementById('btn-reset-db').onclick = () => { if(confirm('Clear all history?')) { this.history = []; this.save(); this.renderOwner(); } };
+                window.onkeydown = (e) => { if(e.key === 'Escape') this.closeModals(); };
             }
         }
 
-        // Init
-        new App();
+        const app = new PlayStationApp();
+        window.app = app;
     </script>
 </body>
 </html>
