@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PS Cafe Manager v4.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* PS5 Neon Theme Colors */
+            --bg-dark: #050508;
+            --surface-m: rgba(20, 20, 28, 0.7);
+            --surface: #12121a;
+            --surface-hover: #1a1a26;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(59, 130, 246, 0.3);
+            
+            --neon-blue: #0072ce;
+            --neon-blue-glow: rgba(0, 114, 206, 0.4);
+            --neon-amber: #f59e0b;
+            --neon-amber-glow: rgba(245, 158, 11, 0.4);
+            --neon-green: #10b981;
+            --neon-green-glow: rgba(16, 185, 129, 0.4);
+            --neon-red: #ef4444;
+
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+            
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: var(--bg-dark); 
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 114, 206, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05), transparent 25%);
+            color: var(--text-main); 
+            font-family: var(--font-main); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow-x: hidden;
+        }
+
+        /* Ambient animated background */
+        .ambient-bg {
+            position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background: linear-gradient(to bottom, transparent, var(--bg-dark));
+        }
+
+        .container { 
+            max-width: 1400px; margin: 0 auto; padding: 1.5rem; flex: 1; width: 100%; 
+            display: flex; flex-direction: column;
+        }
+
+        /* Header */
+        .app-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 1rem 1.5rem; background: var(--surface-m);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); border-radius: var(--radius-lg);
+            flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+        }
+        
+        .logo-area { display: flex; align-items: center; gap: 1rem; }
+        .ps-logo { 
+            width: 44px; height: 44px; background: linear-gradient(135deg, var(--neon-blue) 0%, #312e81 100%); 
+            border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; 
+            font-weight: 800; font-size: 1.1rem; box-shadow: 0 0 15px var(--neon-blue-glow);
+        }
+        .logo-area h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px; }
+        .logo-area span { color: var(--neon-blue); }
+
+        .nav-pills { 
+            display: flex; gap: 0.5rem; background: rgba(0,0,0,0.4); padding: 6px; 
+            border-radius: var(--radius-md); border: 1px solid var(--border); flex-wrap: wrap;
+        }
+        .nav-pills a { 
+            color: var(--text-dim); text-decoration: none; font-weight: 600; 
+            padding: 0.6rem 1.2rem; border-radius: var(--radius-sm); transition: var(--transition); 
+            font-size: 0.95rem; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .nav-pills a:hover { color: var(--text-main); background: var(--surface-hover); }
+        .nav-pills a.active { background: var(--neon-blue); color: #fff; box-shadow: 0 0 10px var(--neon-blue-glow); }
+
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+        .btn { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-main); 
+            padding: 0 1.2rem; border-radius: var(--radius-sm); cursor: pointer; 
+            font-weight: 600; font-size: 0.95rem; font-family: var(--font-main); 
+            transition: var(--transition); min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+        .btn-blue { background: var(--neon-blue); border-color: transparent; color: #fff; box-shadow: 0 4px 15px var(--neon-blue-glow); }
+        .btn-blue:hover { background: #0084f0; transform: translateY(-2px); box-shadow: 0 6px 20px var(--neon-blue-glow); }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: var(--neon-red); }
+        .btn-danger:hover { background: var(--neon-red); color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+        .btn-green { background: var(--neon-green); border-color: transparent; color: #000; box-shadow: 0 4px 15px var(--neon-green-glow); }
+        .btn-green:hover { background: #34d399; transform: translateY(-2px); }
+
+        /* Status Indicator */
+        .status-badge {
+            display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.5);
+            padding: 0 1rem; border-radius: 30px; height: 36px; border: 1px solid var(--border);
+            font-size: 0.8rem; font-weight: 600; color: var(--text-dim);
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); transition: var(--transition); }
+        .status-dot.online { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+
+        /* Station Sections */
+        .dashboard-content { flex: 1; }
+        .station-section { margin-bottom: 3rem; animation: fadeIn 0.5s ease-out; }
+        .station-header { 
+            display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; 
+            border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;
+        }
+        .station-header h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.5px; }
+        .station-rate { font-family: var(--font-mono); color: var(--text-dim); margin-left: auto; font-size: 1rem; background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 20px; }
+
+        .slot-grid { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; 
+        }
+
+        /* Slot Buttons */
+        .slot-btn { 
+            background: var(--surface); border: 1px solid var(--border); 
+            border-radius: var(--radius-lg); padding: 1.5rem; cursor: pointer; text-align: center; 
+            transition: var(--transition); position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px;
+        }
+        .slot-btn::before {
+            content: ''; position: absolute; inset: 0; background: radial-gradient(circle at top, rgba(255,255,255,0.05), transparent); opacity: 0; transition: var(--transition); pointer-events: none;
+        }
+        .slot-btn:hover::before { opacity: 1; }
+        .slot-btn:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        .slot-accent { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; transition: var(--transition); }
+        
+        .slot-btn[data-status="free"] { border-color: rgba(0, 114, 206, 0.2); }
+        .slot-btn[data-status="free"] .slot-accent { background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); }
+        .slot-btn[data-status="free"]:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue-glow); }
+        
+        .slot-btn[data-status="occupied"] { background: linear-gradient(180deg, var(--surface) 0%, rgba(245, 158, 11, 0.05) 100%); border-color: rgba(245, 158, 11, 0.3); }
+        .slot-btn[data-status="occupied"] .slot-accent { background: var(--neon-amber); box-shadow: 0 0 10px var(--neon-amber); animation: pulse-border 2s infinite; }
+        .slot-btn[data-status="occupied"]:hover { border-color: var(--neon-amber); }
+
+        .slot-title { font-size: 0.85rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+        .slot-number { font-size: 2.5rem; font-weight: 800; font-family: var(--font-mono); line-height: 1; }
+        .slot-timer { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; color: var(--neon-amber); margin: 0.5rem 0; text-shadow: 0 0 10px var(--neon-amber-glow); }
+        .slot-customer { font-size: 0.9rem; color: var(--text-main); font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; margin-top: auto; }
+
+        /* Modals */
+        .modal-overlay { 
+            position: fixed; inset: 0; background: rgba(5, 5, 8, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;
+            opacity: 0; visibility: hidden; transition: var(--transition);
+        }
+        .modal-overlay.open { opacity: 1; visibility: visible; }
+        .modal { 
+            background: var(--surface); width: 100%; max-width: 480px; border-radius: var(--radius-lg); 
+            padding: 2.5rem; border: 1px solid var(--border); box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px inset rgba(255,255,255,0.05);
+            transform: scale(0.95) translateY(20px); transition: var(--transition); max-height: 90vh; overflow-y: auto;
+        }
+        .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+        
+        .modal-header { margin-bottom: 1.5rem; text-align: center; }
+        .modal-header h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .modal-subtitle { color: var(--neon-blue); font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; }
+
+        .form-group { margin-bottom: 1.5rem; text-align: start; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .form-control { 
+            width: 100%; padding: 0.8rem 1rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border); 
+            color: var(--text-main); border-radius: var(--radius-sm); font-family: var(--font-main); font-size: 1rem; 
+            transition: var(--transition); min-height: 48px;
+        }
+        .form-control:focus { outline: none; border-color: var(--neon-blue); box-shadow: 0 0 0 3px var(--neon-blue-glow); }
+
+        .timer-display-large { 
+            font-family: var(--font-mono); font-size: 3.5rem; font-weight: 800; color: var(--neon-amber); 
+            text-align: center; padding: 1rem 0; text-shadow: 0 0 20px var(--neon-amber-glow); line-height: 1; letter-spacing: 2px;
+        }
+
+        /* Billing Rows */
+        .billing-card { background: rgba(0,0,0,0.3); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border); }
+        .b-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 0.95rem; }
+        .b-row:last-child { margin-bottom: 0; }
+        .b-label { color: var(--text-dim); }
+        .b-val { font-family: var(--font-mono); font-weight: 700; }
+        .b-grand { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border); font-size: 1.25rem; font-weight: 800; color: var(--neon-green); }
+        .b-grand .b-val { font-size: 1.5rem; }
+
+        /* Food List Accordion */
+        .food-toggle { 
+            width: 100%; background: var(--surface-hover); border: 1px solid var(--border); color: var(--text-main); 
+            padding: 1rem; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; font-family: var(--font-main); 
+            display: flex; justify-content: space-between; align-items: center; transition: var(--transition); margin-bottom: 1rem; min-height: 54px;
+        }
+        .food-toggle:hover { background: rgba(255,255,255,0.08); border-color: var(--neon-blue); }
+        .food-badge { background: var(--neon-amber); color: #000; padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 0.8rem; }
+        .food-container { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; opacity: 0; }
+        .food-container.expanded { max-height: 500px; opacity: 1; margin-bottom: 1.5rem; }
+        
+        .f-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 0.5rem; }
+        .f-info h4 { font-weight: 600; font-size: 1rem; }
+        .f-info p { font-family: var(--font-mono); color: var(--text-dim); font-size: 0.8rem; margin-top: 2px; }
+        .f-ctrl { display: flex; align-items: center; gap: 1rem; }
+        .f-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+        .f-btn:hover { background: var(--neon-blue); border-color: var(--neon-blue); color: #fff; }
+        .f-qty { font-family: var(--font-mono); font-weight: 700; width: 20px; text-align: center; font-size: 1.1rem; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
+
+        /* Footer */
+        footer { margin-top: auto; padding: 2rem 1.5rem; text-align: center; background: rgba(0,0,0,0.5); border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .qr-box { background: #fff; padding: 12px; border-radius: 16px; display: inline-block; }
+        .qr-box img { width: 100px; height: 100px; display: block; }
+        .footer-text { font-size: 0.9rem; color: var(--text-dim); font-weight: 600; }
+        .wa-link { color: var(--neon-green); text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 5px var(--neon-amber); } 50% { box-shadow: 0 0 15px var(--neon-amber); } 100% { box-shadow: 0 0 5px var(--neon-amber); } }
+
+        /* Loading */
+        #loader { position: fixed; inset: 0; background: var(--bg-dark); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem; transition: opacity 0.5s; }
+        .spinner { width: 60px; height: 60px; border: 4px solid var(--surface-hover); border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* RTL adjustments */
+        [dir="rtl"] .station-rate { margin-left: 0; margin-right: auto; }
+        [dir="rtl"] .f-info { text-align: right; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-header { padding: 1rem; justify-content: center; }
+            .slot-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            .slot-btn { height: 160px; padding: 1rem; }
+            .slot-number { font-size: 2rem; }
+            .timer-display-large { font-size: 2.5rem; }
+            .f-ctrl { gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div class="ps-logo" style="width: 80px; height: 80px; font-size: 2rem; border-radius: 20px;">PS</div>
+        <div class="spinner"></div>
+    </div>
+    <div class="ambient-bg"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="ps-logo">PS</div>
+                <h1>PS<span>Cafe</span></h1>
+            </div>
+            <nav class="nav-pills">
+                <a href="index.html" class="active" data-en="Staff" data-ar="الموظفين">Staff</a>
+                <a href="owner.html" data-en="Owner Summary" data-ar="ملخص المالك">Owner Summary</a>
+                <a href="dashboard.html" data-en="Analytics" data-ar="تحليلات">Analytics</a>
+            </nav>
+            <div class="header-controls">
+                <div class="status-badge">
+                    <div id="net-dot" class="status-dot online"></div>
+                    <span id="net-txt">Online</span>
+                </div>
+                <button id="lang-toggle" class="btn">العربية</button>
+            </div>
+        </header>
+
+        <main class="dashboard-content" id="dashboard"></main>
+    </div>
+
+    <!-- Start Modal -->
+    <div class="modal-overlay" id="start-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 data-en="Start Session" data-ar="بدء الجلسة">Start Session</h2>
+                <div class="modal-subtitle" id="start-subtitle">PS5 Room - Device 1</div>
+            </div>
+            <div class="form-group">
+                <label data-en="Customer Name (Optional)" data-ar="اسم الزبون (اختياري)">Customer Name (Optional)</label>
+                <input type="text" id="cust-name-input" class="form-control" placeholder="Guest" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label data-en="Start Time" data-ar="وقت البداية">Start Time</label>
+                <input type="time" id="start-time-input" class="form-control">
+            </div>
+            <div id="start-error" style="color: var(--neon-red); font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-blue" id="btn-start" style="flex: 2;" data-en="Start Session" data-ar="ابدأ الجلسة">Start Session</button>
+                <button class="btn cls-modal" style="flex: 1;" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Modal -->
+    <div class="modal-overlay" id="manage-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 data-en="Manage Session" data-ar="إدارة الجلسة">Manage Session</h2>
+                <div class="modal-subtitle" id="manage-subtitle">PS5 Room - Device 1</div>
+            </div>
+            <div class="timer-display-large" id="live-timer">00:00:00</div>
+            
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label data-en="Edit Start Time" data-ar="تعديل وقت البداية">Edit Start Time</label>
+                    <input type="time" id="edit-time-input" class="form-control">
+                </div>
+                <button class="btn" id="btn-update-time" style="align-self: flex-end;" data-en="Update" data-ar="تحديث">Update</button>
+            </div>
+
+            <button class="food-toggle" id="btn-food-toggle">
+                <span data-en="Add Food & Drinks" data-ar="إضافة طلبات">Add Food & Drinks</span>
+                <span class="food-badge" id="food-badge" style="display:none;">0</span>
+            </button>
+            <div class="food-container" id="food-list">
+                <!-- Populated via JS -->
+            </div>
+
+            <div class="billing-card">
+                <div class="b-row">
+                    <span class="b-label" data-en="Gaming Rate" data-ar="وقت اللعب">Gaming Rate</span>
+                    <span class="b-val" id="live-gaming">0.00</span>
+                </div>
+                <div class="b-row">
+                    <span class="b-label" data-en="Food & Drinks" data-ar="الطلبات">Food & Drinks</span>
+                    <span class="b-val" id="live-food">0.00</span>
+                </div>
+                <div class="b-row b-grand">
+                    <span data-en="Current Total" data-ar="الإجمالي الحالي">Current Total</span>
+                    <span class="b-val" id="live-grand">0.00 EGP</span>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <button class="btn btn-danger" id="btn-pre-end" style="padding: 1.2rem; font-size: 1.1rem;" data-en="End Session & Checkout" data-ar="إنهاء الجلسة والدفع">End Session & Checkout</button>
+                <button class="btn cls-modal" data-en="Close window" data-ar="إغلاق النافذة">Close window</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="modal-overlay" id="checkout-modal">
+        <div class="modal" style="border-color: rgba(16, 185, 129, 0.4);">
+            <div class="modal-header">
+                <h2 style="color: var(--neon-green);" data-en="Checkout Confirm" data-ar="تأكيد الدفع">Checkout Confirm</h2>
+            </div>
+            
+            <div class="billing-card">
+                <div class="b-row">
+                    <span class="b-label" data-en="Play Duration" data-ar="مدة اللعب">Play Duration</span>
+                    <span class="b-val" id="check-dur" style="color: var(--neon-amber);">00:00:00</span>
+                </div>
+                <div class="b-row">
+                    <span class="b-label" data-en="Gaming" data-ar="اللعب">Gaming</span>
+                    <span class="b-val" id="check-gam">0.00</span>
+                </div>
+                <div class="b-row">
+                    <span class="b-label" data-en="Food & Drinks" data-ar="الطلبات">Food & Drinks</span>
+                    <span class="b-val" id="check-food">0.00</span>
+                </div>
+                <div class="form-group" style="margin-top: 1rem; margin-bottom: 0;">
+                    <label data-en="Custom Discount" data-ar="خصم إضافي">Custom Discount</label>
+                    <input type="number" id="discount-input" class="form-control" placeholder="0" min="0" style="height: 40px; min-height: 40px;">
+                </div>
+                <div class="b-row b-grand">
+                    <span data-en="Final Amount" data-ar="المبلغ النهائي">Final Amount</span>
+                    <span class="b-val" id="check-grand">0.00 EGP</span>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <button class="btn btn-green" id="btn-confirm-pay" style="padding: 1.2rem; font-size: 1.1rem; color:#000;" data-en="Confirm Payment" data-ar="تأكيد تحصيل المبلغ">Confirm Payment</button>
+                <button class="btn" id="btn-back-manage" data-en="Back to Session" data-ar="رجوع للجلسة">Back to Session</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="qr-box">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fahmed-hany-aou.github.io%2Fcard%2Findex" alt="QR Code">
+        </div>
+        <div class="footer-text" data-en="Powered & Designed by Eng Ahmed Hany" data-ar="تم التطوير والتصميم بواسطة المهندس أحمد هاني">Powered & Designed by Eng Ahmed Hany</div>
+        <a href="https://wa.me/201065232774" class="wa-link" target="_blank">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a10.1 10.1 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            +20 1065232774
+        </a>
+    </footer>
+
+    <script>
+        // Integrated Config
+        const CONFIG = {
+            stations: [
+                { id: "ps4p", nameEn: "PS4 Partition", nameAr: "PS4 صالة", rate: 30, slots: 6 },
+                { id: "ps4r", nameEn: "PS4 Private",   nameAr: "PS4 غرفة",  rate: 50, slots: 4 },
+                { id: "ps5p", nameEn: "PS5 Partition", nameAr: "PS5 صالة", rate: 60, slots: 4 },
+                { id: "ps5r", nameEn: "PS5 Private",   nameAr: "PS5 غرفة",  rate: 100, slots: 2 }
+            ],
+            food: [
+                { id: "cola",     nameEn: "Cola",     nameAr: "كولا",       price: 15 },
+                { id: "tea",      nameEn: "Tea",      nameAr: "شاي",        price: 10 },
+                { id: "water",    nameEn: "Water",    nameAr: "مياه",       price: 5 },
+                { id: "sandwich", nameEn: "Sandwich", nameAr: "ساندوتش",    price: 25 },
+                { id: "coffee",   nameEn: "Coffee",   nameAr: "قهوة",       price: 20 },
+                { id: "chips",    nameEn: "Chips",    nameAr: "شيبسي",      price: 10 }
+            ],
+            // Google sheet URL for background sync (dev analytics)
+            gsUrl: "https://script.google.com/macros/s/AKfycbxwPUEumOv3TdpxRjsMALTBrxzYRVAusB-BAxhrdv7HDUh_4ONs1FbFNfyHVlPJBMg/exec"
+        };
+
+        class App {
+            constructor() {
+                this.lang = localStorage.getItem('ps-lang') || 'en';
+                this.active = JSON.parse(localStorage.getItem('ps-active')) || [];
+                this.completed = JSON.parse(localStorage.getItem('ps-completed')) || [];
+                this.pending = JSON.parse(localStorage.getItem('ps-pending')) || [];
+                
+                this.editSession = null;
+                this.selectedSlot = null;
+                
+                window._app = this;
+                this.init();
+            }
+
+            init() {
+                this.applyLang();
+                this.renderDashboard();
+                this.bindEvents();
+                
+                setInterval(() => this.tickTimers(), 1000);
+                
+                // Network check
+                this.updateNet();
+                window.addEventListener('online', () => { this.updateNet(); this.syncPending(); });
+                window.addEventListener('offline', () => this.updateNet());
+                
+                setTimeout(() => {
+                    document.getElementById('loader').style.opacity = '0';
+                    setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+                    this.syncPending(); // Attempt initial sync
+                }, 800);
+            }
+
+            cur() { return this.lang === 'ar' ? 'ج.م' : 'EGP'; }
+
+            applyLang() {
+                document.documentElement.dir = this.lang === 'ar' ? 'rtl' : 'ltr';
+                document.documentElement.lang = this.lang;
+                document.getElementById('lang-toggle').textContent = this.lang === 'en' ? 'العربية' : 'English';
+                document.querySelectorAll('[data-en]').forEach(el => {
+                    el.textContent = el.getAttribute(`data-${this.lang}`);
+                });
+                localStorage.setItem('ps-lang', this.lang);
+            }
+
+            updateNet() {
+                const isOnline = navigator.onLine;
+                const dot = document.getElementById('net-dot');
+                const txt = document.getElementById('net-txt');
+                dot.className = `status-dot ${isOnline ? 'online' : ''}`;
+                txt.textContent = isOnline ? (this.lang === 'en' ? 'Online' : 'متصل') : (this.lang === 'en' ? 'Offline' : 'غير متصل');
+                if(!isOnline) dot.style.background = 'var(--neon-red)';
+                else dot.style.background = '';
+            }
+
+            save() {
+                localStorage.setItem('ps-active', JSON.stringify(this.active));
+                localStorage.setItem('ps-completed', JSON.stringify(this.completed));
+                localStorage.setItem('ps-pending', JSON.stringify(this.pending));
+            }
+
+            // Calculation Logic
+            elapsed(isoString) {
+                const ms = Math.max(0, Date.now() - new Date(isoString).getTime());
+                const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+                return { 
+                    str: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`, 
+                    mins: ms/60000, ms 
+                };
+            }
+
+            calcFood(session) {
+                return Object.entries(session.foodCart || {}).reduce((t, [id, qty]) => {
+                    const item = CONFIG.food.find(f => f.id === id);
+                    return t + ((item ? item.price : 0) * qty);
+                }, 0);
+            }
+
+            // Render Functions
+            renderDashboard() {
+                const dash = document.getElementById('dashboard');
+                dash.innerHTML = '';
+                
+                CONFIG.stations.forEach(st => {
+                    const sec = document.createElement('section');
+                    sec.className = 'station-section';
+                    
+                    const name = this.lang === 'en' ? st.nameEn : st.nameAr;
+                    
+                    sec.innerHTML = `
+                        <div class="station-header">
+                            <h2>${name}</h2>
+                            <div class="station-rate">${st.rate} ${this.cur()} / ${this.lang === 'en' ? 'hr' : 'س'}</div>
+                        </div>
+                        <div class="slot-grid" id="grid-${st.id}"></div>
+                    `;
+                    dash.appendChild(sec);
+                    
+                    const grid = document.getElementById(`grid-${st.id}`);
+                    for (let i = 1; i <= st.slots; i++) {
+                        const sess = this.active.find(s => s.stid === st.id && s.slot === i);
+                        const btn = document.createElement('div');
+                        btn.className = 'slot-btn';
+                        btn.dataset.status = sess ? 'occupied' : 'free';
+                        
+                        if (sess) {
+                            const cname = sess.name || sess.custName || (this.lang === 'en' ? 'Guest' : 'ضيف');
+                            btn.innerHTML = `
+                                <div class="slot-title">${this.lang === 'en' ? 'Device' : 'جهاز'} ${i}</div>
+                                <div class="slot-timer" id="tmr-${st.id}-${i}">00:00:00</div>
+                                <div class="slot-customer">${cname}</div>
+                                <div class="slot-accent"></div>
+                            `;
+                            btn.onclick = () => this.openManage(sess.id);
+                        } else {
+                            btn.innerHTML = `
+                                <div class="slot-title">${this.lang === 'en' ? 'Device' : 'جهاز'}</div>
+                                <div class="slot-number">${i}</div>
+                                <div class="slot-accent"></div>
+                            `;
+                            btn.onclick = () => this.openStart(st.id, i);
+                        }
+                        
+                        grid.appendChild(btn);
+                    }
+                });
+            }
+
+            renderFoodList() {
+                const list = document.getElementById('food-list');
+                list.innerHTML = '';
+                
+                CONFIG.food.forEach(item => {
+                    const qty = this.editSession?.foodCart?.[item.id] || 0;
+                    const name = this.lang === 'en' ? item.nameEn : item.nameAr;
+                    
+                    const div = document.createElement('div');
+                    div.className = 'f-item';
+                    div.innerHTML = `
+                        <div class="f-info">
+                            <h4>${name}</h4>
+                            <p>${item.price} ${this.cur()}</p>
+                        </div>
+                        <div class="f-ctrl">
+                            <button class="f-btn" onclick="window._app.updateFood('${item.id}', -1)">-</button>
+                            <span class="f-qty">${qty}</span>
+                            <button class="f-btn" onclick="window._app.updateFood('${item.id}', 1)">+</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+                
+                const count = Object.values(this.editSession?.foodCart || {}).reduce((a,b)=>a+b, 0);
+                const badge = document.getElementById('food-badge');
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'block' : 'none';
+            }
+
+            tickTimers() {
+                // Dashboard Timers
+                this.active.forEach(s => {
+                    const el = document.getElementById(`tmr-${s.stid}-${s.slot}`);
+                    if (el) el.textContent = this.elapsed(s.start || s.startTime).str;
+                });
+                
+                // Modal Manager
+                if (this.editSession) {
+                    const st = CONFIG.stations.find(x => x.id === this.editSession.stid);
+                    if(!st) return;
+                    
+                    const el = this.elapsed(this.editSession.start || this.editSession.startTime);
+                    const gaming = (st.rate / 60) * el.mins;
+                    const food = this.calcFood(this.editSession);
+                    
+                    document.getElementById('live-timer').textContent = el.str;
+                    document.getElementById('live-gaming').textContent = `${gaming.toFixed(2)} ${this.cur()}`;
+                    document.getElementById('live-food').textContent = `${food.toFixed(2)} ${this.cur()}`;
+                    document.getElementById('live-grand').textContent = `${(gaming + food).toFixed(2)} ${this.cur()}`;
+                }
+            }
+
+            // Modal Actions
+            openStart(stid, slot) {
+                this.selectedSlot = { stid, slot };
+                const st = CONFIG.stations.find(x => x.id === stid);
+                const name = this.lang === 'en' ? st.nameEn : st.nameAr;
+                
+                document.getElementById('start-subtitle').textContent = `${name} • ${this.lang === 'en' ? 'Device' : 'جهاز'} ${slot}`;
+                document.getElementById('cust-name-input').value = '';
+                
+                const d = new Date();
+                document.getElementById('start-time-input').value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                document.getElementById('start-error').style.display = 'none';
+                
+                this.showModal('start-modal');
+                setTimeout(() => document.getElementById('cust-name-input').focus(), 100);
+            }
+
+            openManage(id) {
+                this.editSession = this.active.find(s => s.id === id);
+                if(!this.editSession) return;
+                
+                const st = CONFIG.stations.find(x => x.id === this.editSession.stid);
+                const name = this.lang === 'en' ? st.nameEn : st.nameAr;
+                
+                document.getElementById('manage-subtitle').textContent = `${name} • ${this.lang === 'en' ? 'Device' : 'جهاز'} ${this.editSession.slot}`;
+                
+                const d = new Date(this.editSession.start || this.editSession.startTime);
+                document.getElementById('edit-time-input').value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                
+                document.getElementById('food-list').classList.remove('expanded');
+                
+                this.renderFoodList();
+                this.tickTimers();
+                this.showModal('manage-modal');
+            }
+
+            // Action Handlers
+            updateFood(id, delta) {
+                if(!this.editSession.foodCart) this.editSession.foodCart = {};
+                const current = this.editSession.foodCart[id] || 0;
+                const next = Math.max(0, current + delta);
+                
+                if (next === 0) delete this.editSession.foodCart[id];
+                else this.editSession.foodCart[id] = next;
+                
+                this.save();
+                this.renderFoodList();
+                this.tickTimers();
+            }
+
+            parseTime(timeStr) {
+                const [h, m] = timeStr.split(':').map(Number);
+                const d = new Date();
+                d.setHours(h, m, 0, 0);
+                if (d.getTime() > Date.now()) d.setDate(d.getDate() - 1);
+                return d;
+            }
+
+            doStart() {
+                const val = document.getElementById('start-time-input').value;
+                const d = this.parseTime(val);
+                const diffH = (Date.now() - d.getTime()) / 3600000;
+                
+                const err = document.getElementById('start-error');
+                if (diffH > 12) {
+                    err.textContent = this.lang === 'en' ? 'Time cannot be > 12 hours ago' : 'لا يمكن اختيار وقت قبل أكثر من 12 ساعة';
+                    err.style.display = 'block';
+                    return;
+                }
+                
+                const name = document.getElementById('cust-name-input').value.trim();
+                
+                const sess = {
+                    id: Date.now().toString(),
+                    stid: this.selectedSlot.stid,
+                    slot: this.selectedSlot.slot,
+                    start: d.toISOString(),
+                    name: name,
+                    foodCart: {}
+                };
+                
+                this.active.push(sess);
+                this.save();
+                this.renderDashboard();
+                this.hideModals();
+            }
+
+            doUpdateStartTime() {
+                if(!this.editSession) return;
+                const val = document.getElementById('edit-time-input').value;
+                const d = this.parseTime(val);
+                const diffH = (Date.now() - d.getTime()) / 3600000;
+                
+                if (diffH > 12 || d.getTime() > Date.now()) return;
+                
+                this.editSession.start = d.toISOString();
+                this.save();
+                this.tickTimers();
+            }
+
+            goCheckout() {
+                if(!this.editSession) return;
+                const s = this.editSession;
+                const st = CONFIG.stations.find(x => x.id === s.stid);
+                
+                const el = this.elapsed(s.start || s.startTime);
+                const gaming = (st.rate / 60) * el.mins;
+                const food = this.calcFood(s);
+                
+                document.getElementById('check-dur').textContent = el.str;
+                document.getElementById('check-gam').textContent = `${gaming.toFixed(2)} ${this.cur()}`;
+                document.getElementById('check-food').textContent = `${food.toFixed(2)} ${this.cur()}`;
+                
+                const discInput = document.getElementById('discount-input');
+                discInput.value = '';
+                
+                const updateGrand = () => {
+                    const discount = Number(discInput.value || 0);
+                    const grand = Math.max(0, (gaming + food) - discount);
+                    document.getElementById('check-grand').textContent = `${grand.toFixed(2)} ${this.cur()}`;
+                };
+                
+                discInput.oninput = updateGrand;
+                updateGrand();
+                
+                this.hideModals();
+                this.showModal('checkout-modal');
+            }
+
+            doConfirm() {
+                if(!this.editSession) return;
+                const s = this.editSession;
+                const st = CONFIG.stations.find(x => x.id === s.stid);
+                
+                const el = this.elapsed(s.start || s.startTime);
+                const gaming = (st.rate / 60) * el.mins;
+                const food = this.calcFood(s);
+                const discount = Number(document.getElementById('discount-input').value || 0);
+                const total = Math.max(0, (gaming + food) - discount);
+                
+                const now = new Date();
+                
+                // Format for Google Sheets
+                const formatSheet = (dt) => {
+                    const d = new Date(dt);
+                    const p = v => String(v).padStart(2,'0');
+                    return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+                };
+                
+                const record = {
+                    id: s.id,
+                    stid: s.stid,
+                    slot: s.slot,
+                    stationName: this.lang === 'en' ? st.nameEn : st.nameAr,
+                    start: s.start || s.startTime,
+                    endTime: now.toISOString(),
+                    startSheet: formatSheet(s.start || s.startTime),
+                    endSheet: formatSheet(now),
+                    duration: el.str,
+                    name: s.name || s.custName || '',
+                    foodCart: s.foodCart,
+                    gamingTotal: Math.round(gaming * 100) / 100,
+                    foodTotal: Math.round(food * 100) / 100,
+                    discount: discount,
+                    grandTotal: Math.round(total * 100) / 100
+                };
+                
+                this.completed.push(record);
+                this.pending.push(record);
+                this.active = this.active.filter(x => x.id !== s.id);
+                this.editSession = null;
+                
+                this.save();
+                this.renderDashboard();
+                this.hideModals();
+                this.syncPending();
+            }
+
+            // Sync Logic
+            async syncPending() {
+                if (!navigator.onLine || !CONFIG.gsUrl || this.pending.length === 0) return;
+                
+                const toSync = [...this.pending];
+                for(const rec of toSync) {
+                    try {
+                        const st = CONFIG.stations.find(x => x.id === rec.stid);
+                        const itemsObj = Object.entries(rec.foodCart || {}).map(([id, qty]) => {
+                            const f = CONFIG.food.find(x => x.id === id);
+                            return { id, name: f?.nameEn || id, qty, price: f?.price || 0 };
+                        });
+                        
+                        const payload = {
+                            id: rec.id,
+                            custName: rec.name || 'Guest',
+                            startTimeSheet: rec.startSheet || '--',
+                            endTimeSheet: rec.endSheet || '--',
+                            duration: rec.duration || '--',
+                            stationName: rec.stationName || 'PS',
+                            slotNumber: rec.slot,
+                            gamingTotal: rec.gamingTotal,
+                            foodTotal: rec.foodTotal,
+                            grandTotal: rec.grandTotal,
+                            foodItems: itemsObj,
+                            discount: rec.discount || 0
+                        };
+                        
+                        await fetch(CONFIG.gsUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                        this.pending = this.pending.filter(x => x.id !== rec.id);
+                    } catch(e) { console.error('Sync error:', e); }
+                }
+                localStorage.setItem('ps-pending', JSON.stringify(this.pending));
+            }
+
+            // UI Utils
+            showModal(id) { document.getElementById(id).classList.add('open'); }
+            hideModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open')); }
+
+            bindEvents() {
+                // Lang
+                document.getElementById('lang-toggle').onclick = () => {
+                    this.lang = this.lang === 'en' ? 'ar' : 'en';
+                    this.applyLang();
+                    this.renderDashboard();
+                    this.updateNet();
+                };
+                
+                // Modals
+                document.querySelectorAll('.cls-modal').forEach(btn => btn.onclick = () => { this.hideModals(); this.editSession = null; });
+                document.querySelectorAll('.modal-overlay').forEach(ov => ov.onclick = (e) => {
+                    if (e.target === ov) { this.hideModals(); this.editSession = null; }
+                });
+                
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { this.hideModals(); this.editSession = null; }
+                });
+
+                // Start
+                document.getElementById('btn-start').onclick = () => this.doStart();
+                document.getElementById('start-time-input').addEventListener('keypress', e => { if(e.key === 'Enter') this.doStart(); });
+                document.getElementById('cust-name-input').addEventListener('keypress', e => { if(e.key === 'Enter') this.doStart(); });
+                
+                // Manage
+                document.getElementById('btn-update-time').onclick = () => this.doUpdateStartTime();
+                document.getElementById('btn-food-toggle').onclick = () => document.getElementById('food-list').classList.toggle('expanded');
+                document.getElementById('btn-pre-end').onclick = () => this.goCheckout();
+                
+                // Checkout
+                document.getElementById('btn-back-manage').onclick = () => {
+                    this.hideModals();
+                    this.showModal('manage-modal');
+                };
+                document.getElementById('btn-confirm-pay').onclick = () => this.doConfirm();
+            }
+        }
+
+        // Init
+        new App();
+    </script>
+</body>
+</html>

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard – PS Cafe v4.0</title>
+    <!-- Standard printing is natively better for Arabic PDFs than html2canvas. We will implement smart print CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* PS5 Neon Theme Colors */
+            --bg-dark: #050508;
+            --surface-m: rgba(20, 20, 28, 0.7);
+            --surface: #12121a;
+            --surface-hover: #1a1a26;
+            --border: rgba(255, 255, 255, 0.08);
+            
+            --neon-blue: #0072ce;
+            --neon-amber: #f59e0b;
+            --neon-green: #10b981;
+            --neon-red: #ef4444;
+            --neon-purple: #8b5cf6;
+
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+            
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: var(--bg-dark); 
+            background-image: radial-gradient(circle at 50% -10%, rgba(139, 92, 246, 0.05), transparent 50%);
+            color: var(--text-main); 
+            font-family: var(--font-main); 
+            min-height: 100vh; 
+            display: flex; flex-direction: column; 
+            overflow-x: hidden;
+        }
+
+        .container { 
+            max-width: 1400px; margin: 0 auto; padding: 1.5rem; flex: 1; width: 100%; 
+            display: flex; flex-direction: column;
+        }
+
+        /* Header */
+        .app-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 1rem 1.5rem; background: var(--surface-m);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); border-radius: var(--radius-lg);
+            flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
+        }
+        
+        .logo-area { display: flex; align-items: center; gap: 1rem; }
+        .ps-logo { 
+            width: 44px; height: 44px; background: linear-gradient(135deg, var(--neon-blue) 0%, #312e81 100%); 
+            border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; 
+            font-weight: 800; font-size: 1.1rem; box-shadow: 0 0 15px rgba(0, 114, 206, 0.4);
+        }
+        .logo-area h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.5px; }
+        .logo-area span { color: var(--neon-blue); }
+
+        .nav-pills { 
+            display: flex; gap: 0.5rem; background: rgba(0,0,0,0.4); padding: 6px; 
+            border-radius: var(--radius-md); border: 1px solid var(--border); flex-wrap: wrap;
+        }
+        .nav-pills a { 
+            color: var(--text-dim); text-decoration: none; font-weight: 600; 
+            padding: 0.6rem 1.2rem; border-radius: var(--radius-sm); transition: var(--transition); 
+            font-size: 0.95rem; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .nav-pills a:hover { color: var(--text-main); background: var(--surface-hover); }
+        .nav-pills a.active { background: var(--neon-purple); color: #fff; box-shadow: 0 0 10px rgba(139, 92, 246, 0.4); }
+
+        .header-controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .btn { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-main); 
+            padding: 0 1.2rem; border-radius: var(--radius-sm); cursor: pointer; 
+            font-weight: 600; font-size: 0.95rem; font-family: var(--font-main); 
+            transition: var(--transition); min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+        .btn-purple { background: var(--neon-purple); border-color: transparent; color: #fff; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); }
+        .btn-purple:hover { background: #7c3aed; transform: translateY(-2px); }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: var(--neon-red); }
+        .btn-danger:hover { background: var(--neon-red); color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+
+        /* Filter Box */
+        .filter-panel {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.5rem; display: flex; gap: 1.5rem; align-items: flex-end;
+            flex-wrap: wrap; margin-bottom: 2rem;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .filter-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-group input {
+            background: var(--bg-dark); border: 1px solid var(--border); color: var(--text-main);
+            padding: 0.8rem 1rem; border-radius: var(--radius-sm); font-family: var(--font-main);
+            transition: var(--transition); min-height: 44px; color-scheme: dark;
+        }
+        .filter-group input:focus { outline: none; border-color: var(--neon-purple); box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3); }
+        .filter-tag { margin-left: auto; background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 20px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-dim); }
+        [dir="rtl"] .filter-tag { margin-left: 0; margin-right: auto; }
+
+        /* Stats Grid */
+        .stats-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 1.5rem; margin-bottom: 2.5rem; 
+        }
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 1.5rem; position: relative; overflow: hidden;
+        }
+        .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; }
+        .c-blue::after { background: var(--neon-blue); }
+        .c-green::after { background: var(--neon-green); }
+        .c-purple::after { background: var(--neon-purple); }
+        .c-amber::after { background: var(--neon-amber); }
+
+        .stat-label { font-size: 0.8rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .stat-val { font-size: 2rem; font-weight: 800; font-family: var(--font-mono); letter-spacing: -1px; }
+
+        /* Charts */
+        .charts-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem; margin-bottom: 3rem;
+        }
+        .chart-box {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.5rem;
+        }
+        .chart-box.full { grid-column: 1 / -1; max-width: 1000px; margin: 0 auto; width: 100%; }
+        .chart-header { margin-bottom: 1.5rem; font-size: 1rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-wrapper { position: relative; height: 300px; }
+
+        /* Empty State */
+        .empty-state { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 5rem 1rem; text-align: center; }
+        .empty-state.show { display: flex; }
+        .empty-icon { font-size: 4rem; opacity: 0.2; margin-bottom: 1rem; }
+        .empty-state h2 { font-size: 1.5rem; color: var(--text-dim); }
+
+        /* Footer */
+        footer { margin-top: auto; padding: 2rem 1.5rem; text-align: center; border-top: 1px solid var(--border); flex-direction: column; align-items: center; gap: 1rem; display: flex; }
+        .qr-box { background: #fff; padding: 12px; border-radius: 16px; display: inline-block; }
+        .qr-box img { width: 100px; height: 100px; display: block; }
+        .footer-text { font-size: 0.9rem; color: var(--text-dim); font-weight: 600; }
+        .wa-link { color: var(--neon-green); text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
+
+        /* PDF Printing (RTL/Arabic safe) */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff !important; color: #000 !important; background-image: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .container { padding: 0 !important; }
+            .stat-card { background: #f8f9fa !important; border: 1px solid #dee2e6 !important; break-inside: avoid; }
+            .stat-val { color: #000 !important; }
+            .chart-box { background: #fff !important; border: 1px solid #dee2e6 !important; break-inside: avoid; page-break-inside: avoid; margin-bottom: 1rem; }
+            .chart-header { color: #000 !important; }
+            footer { display: none !important; }
+            .charts-grid { display: block !important; } /* Stack charts cleanly for printing */
+            .chart-wrapper { height: 250px !important; margin-bottom: 2rem; }
+        }
+
+        @media (max-width: 768px) {
+            .app-header { justify-content: center; }
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="ps-logo">PS</div>
+                <h1>PS<span>Cafe</span></h1>
+            </div>
+            <nav class="nav-pills no-print">
+                <a href="index.html" data-en="Staff" data-ar="الموظفين">Staff</a>
+                <a href="owner.html" data-en="Owner Summary" data-ar="ملخص المالك">Owner Summary</a>
+                <a href="dashboard.html" class="active" data-en="Analytics" data-ar="تحليلات">Analytics</a>
+            </nav>
+            <div class="header-controls no-print">
+                <button id="lang-toggle" class="btn">العربية</button>
+                <button onclick="window.print()" class="btn btn-purple" data-en="🖨️ Export / Print" data-ar="🖨️ تصدير / طباعة">🖨️ Export / Print</button>
+            </div>
+        </header>
+
+        <div id="empty-state" class="empty-state">
+            <div class="empty-icon">📊</div>
+            <h2 data-en="No data available" data-ar="لا توجد بيانات متاحة">No data available</h2>
+        </div>
+
+        <main id="main-content">
+            <div class="filter-panel no-print">
+                <div class="filter-group">
+                    <label data-en="From Date" data-ar="من تاريخ">From Date</label>
+                    <input type="date" id="date-from">
+                </div>
+                <div class="filter-group">
+                    <label data-en="To Date" data-ar="إلى تاريخ">To Date</label>
+                    <input type="date" id="date-to">
+                </div>
+                <button onclick="applyFilters()" class="btn btn-purple" style="margin-bottom: 2px;" data-en="Apply" data-ar="تطبيق">Apply</button>
+                <button onclick="resetFilters()" class="btn" style="margin-bottom: 2px;" data-en="Reset" data-ar="إعادة ضبط">Reset</button>
+                
+                <div class="filter-tag" id="filter-tag">All Time — 0 Sessions</div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card c-blue">
+                    <div class="stat-label" data-en="Total Sessions" data-ar="إجمالي الجلسات">Total Sessions</div>
+                    <div class="stat-val" id="vs-sessions" style="color:var(--neon-blue);">0</div>
+                </div>
+                <div class="stat-card c-green">
+                    <div class="stat-label" data-en="Gross Revenue" data-ar="إجمالي الدخل">Gross Revenue</div>
+                    <div class="stat-val" id="vs-revenue" style="color:var(--neon-green);">0</div>
+                </div>
+                <div class="stat-card c-purple">
+                    <div class="stat-label" data-en="Avg Per Session" data-ar="متوسط الجلسة">Avg Per Session</div>
+                    <div class="stat-val" id="vs-avg" style="color:var(--neon-purple);">0</div>
+                </div>
+                <div class="stat-card c-amber">
+                    <div class="stat-label" data-en="Total Discounts" data-ar="إجمالي الخصومات">Total Discounts</div>
+                    <div class="stat-val" id="vs-discounts" style="color:var(--neon-amber);">0</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-header" data-en="Revenue by Station" data-ar="الإيرادات حسب الجهاز">Revenue by Station</div>
+                    <div class="chart-wrapper"><canvas id="ch-station"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header" data-en="Daily Revenue" data-ar="الإيرادات اليومية">Daily Revenue</div>
+                    <div class="chart-wrapper"><canvas id="ch-daily"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header" data-en="Top Food Items" data-ar="أكثر الطلبات مبيعاً">Top Food Items</div>
+                    <div class="chart-wrapper"><canvas id="ch-food"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header" data-en="Traffic By Hour" data-ar="نسبة الإقبال بالساعة">Traffic By Hour</div>
+                    <div class="chart-wrapper"><canvas id="ch-peak"></canvas></div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header" data-en="Income Split" data-ar="توزيع الإيرادات">Income Split</div>
+                    <div class="chart-wrapper"><canvas id="ch-split"></canvas></div>
+                </div>
+                <div class="chart-box full">
+                    <div class="chart-header" data-en="Session Length Spread" data-ar="توزيع مدة الجلسات">Session Length Spread</div>
+                    <div class="chart-wrapper"><canvas id="ch-dur"></canvas></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <div class="qr-box">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fahmed-hany-aou.github.io%2Fcard%2Findex" alt="QR Code">
+        </div>
+        <div class="footer-text" data-en="Powered & Designed by Eng Ahmed Hany" data-ar="تم التطوير والتصميم بواسطة المهندس أحمد هاني">Powered & Designed by Eng Ahmed Hany</div>
+        <a href="https://wa.me/201065232774" class="wa-link" target="_blank">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a10.1 10.1 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            +20 1065232774
+        </a>
+    </footer>
+
+    <script>
+        const ALL = JSON.parse(localStorage.getItem('ps-completed')) || [];
+        let filtered = [...ALL];
+        let lang = localStorage.getItem('ps-lang') || 'en';
+        let charts = [];
+
+        // UI Translation
+        const EN_DUR = ['0-30m', '30-60m', '60-90m', '90-120m', '120m+'];
+        const AR_DUR = ['0-30د', '30-60د', '60-90د', '90-120د', '120د+'];
+
+        function cur() { return lang === 'ar' ? 'ج.م' : 'EGP'; }
+
+        function toggleLang() {
+            lang = lang === 'en' ? 'ar' : 'en';
+            localStorage.setItem('ps-lang', lang);
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = lang;
+            document.getElementById('lang-toggle').textContent = lang === 'en' ? 'العربية' : 'English';
+            
+            document.querySelectorAll('[data-en]').forEach(el => {
+                el.textContent = el.getAttribute(`data-${lang}`);
+            });
+            draw();
+        }
+
+        document.getElementById('lang-toggle').onclick = toggleLang;
+
+        // Filtering
+        function setDefaultDates() {
+            if(!ALL.length) return;
+            const now = new Date();
+            const past = new Date(); past.setDate(now.getDate() - 30);
+            
+            document.getElementById('date-from').value = past.toISOString().split('T')[0];
+            document.getElementById('date-to').value = now.toISOString().split('T')[0];
+            applyFilters();
+        }
+
+        function resetFilters() {
+            document.getElementById('date-from').value = '';
+            document.getElementById('date-to').value = '';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const f = document.getElementById('date-from').value;
+            const t = document.getElementById('date-to').value;
+            
+            if(!f && !t) {
+                filtered = [...ALL];
+                const tag = lang === 'en' ? 'All Time' : 'كل الأوقات';
+                document.getElementById('filter-tag').textContent = `${tag} — ${filtered.length} ${lang==='en'?'Sessions':'جلسات'}`;
+            } else {
+                const sDate = f ? new Date(f) : new Date(0); sDate.setHours(0,0,0,0);
+                const eDate = t ? new Date(t) : new Date(); eDate.setHours(23,59,59,999);
+                
+                filtered = ALL.filter(item => {
+                    const d = new Date(item.endTime || item.start || 0);
+                    return d >= sDate && d <= eDate;
+                });
+                
+                const flabel = lang === 'en' ? 'From' : 'من';
+                const tlabel = lang === 'en' ? 'To' : 'إلى';
+                document.getElementById('filter-tag').textContent = `${flabel} ${f||'∞'} ${tlabel} ${t||'∞'} — ${filtered.length}`;
+            }
+            draw();
+        }
+
+        // Draw Data
+        function draw() {
+            if (ALL.length === 0) {
+                document.getElementById('empty-state').classList.add('show');
+                document.getElementById('main-content').style.display = 'none';
+                return;
+            } else {
+                document.getElementById('empty-state').classList.remove('show');
+                document.getElementById('main-content').style.display = 'block';
+            }
+
+            // Stats
+            const revenue = filtered.reduce((a, b) => a + (Number(b.grandTotal)||0), 0);
+            const discounts = filtered.reduce((a, b) => a + (Number(b.discount)||0), 0);
+            const avg = filtered.length ? revenue / filtered.length : 0;
+            
+            document.getElementById('vs-sessions').textContent = filtered.length;
+            document.getElementById('vs-revenue').textContent = `${revenue.toFixed(2)} ${cur()}`;
+            document.getElementById('vs-avg').textContent = `${avg.toFixed(2)} ${cur()}`;
+            document.getElementById('vs-discounts').textContent = `${discounts.toFixed(2)} ${cur()}`;
+
+            if(typeof Chart !== 'undefined') drawCharts();
+        }
+
+        function extract() {
+            const data = {
+                stationRev: {}, daily: {}, food: {}, peak: Array(24).fill(0),
+                gameTot: 0, foodTot: 0, bins: [0,0,0,0,0]
+            };
+
+            filtered.forEach(s => {
+                const gr = Number(s.grandTotal || 0);
+                const g  = Number(s.gamingTotal || 0);
+                const f  = Number(s.foodTotal || 0);
+                const st = s.stationName || 'PS4';
+                
+                data.gameTot += g;
+                data.foodTot += f;
+                
+                data.stationRev[st] = (data.stationRev[st] || 0) + gr;
+                
+                if (s.endTime || s.start) {
+                    const d = new Date(s.endTime || s.start);
+                    if(!isNaN(d)) {
+                        const dateStr = d.toISOString().split('T')[0];
+                        data.daily[dateStr] = (data.daily[dateStr] || 0) + gr;
+                        data.peak[d.getHours()]++;
+                    }
+                }
+                
+                if (s.foodCart) {
+                    Object.entries(s.foodCart).forEach(([id, q]) => {
+                        let fnameTemp = id;
+                        // Search config equivalent (fallback)
+                        if(id === 'cola') fnameTemp = lang==='en'?'Cola':'كولا';
+                        else if(id === 'tea') fnameTemp = lang==='en'?'Tea':'شاي';
+                        else if(id === 'water') fnameTemp = lang==='en'?'Water':'مياه';
+                        else if(id === 'sandwich') fnameTemp = lang==='en'?'Sandwich':'ساندوتش';
+                        
+                        data.food[fnameTemp] = (data.food[fnameTemp] || 0) + q;
+                    });
+                }
+                
+                // Duration
+                let m = 0;
+                if(s.duration && s.duration.includes(':')) {
+                    const parts = s.duration.split(':');
+                    m = (parseInt(parts[0])*60) + parseInt(parts[1]);
+                } else if((s.start||s.startTime) && s.endTime) {
+                    m = (new Date(s.endTime) - new Date(s.start||s.startTime))/60000;
+                }
+                
+                if(m <= 30) data.bins[0]++;
+                else if(m <= 60) data.bins[1]++;
+                else if(m <= 90) data.bins[2]++;
+                else if(m <= 120) data.bins[3]++;
+                else data.bins[4]++;
+            });
+
+            return data;
+        }
+
+        // Charting
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Space Mono', monospace";
+
+        const p = {
+            blue: '#0072ce', amber: '#f59e0b', green: '#10b981', purple: '#8b5cf6', red: '#ef4444'
+        };
+
+        const gridOps = { grid: { color: 'rgba(255,255,255,0.05)' }, border: { dash: [4,4] } };
+
+        function makeChart(id, conf) {
+            const el = document.getElementById(id);
+            if(!el) return;
+            const ch = new Chart(el, conf);
+            charts.push(ch);
+        }
+
+        function drawCharts() {
+            charts.forEach(c => c.destroy());
+            charts = [];
+            
+            if(!filtered.length) return;
+            const d = extract();
+            
+            // 1. Station
+            makeChart('ch-station', {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(d.stationRev),
+                    datasets: [{ data: Object.values(d.stationRev), backgroundColor: [p.blue, p.purple, p.green, p.amber], borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: gridOps, y: gridOps } }
+            });
+
+            // 2. Daily
+            const days = Object.keys(d.daily).sort();
+            makeChart('ch-daily', {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{ data: days.map(x=>d.daily[x]), borderColor: p.green, backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: gridOps, y: gridOps } }
+            });
+
+            // 3. Top Food
+            const topF = Object.entries(d.food).sort((a,b)=>b[1]-a[1]).slice(0,5);
+            makeChart('ch-food', {
+                type: 'bar',
+                data: {
+                    labels: topF.map(x=>x[0]),
+                    datasets: [{ data: topF.map(x=>x[1]), backgroundColor: p.amber, borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: gridOps, y: gridOps } }
+            });
+
+            // 4. Peak
+            makeChart('ch-peak', {
+                type: 'bar',
+                data: {
+                    labels: Array(24).fill(0).map((_,i)=>`${i}:00`),
+                    datasets: [{ data: d.peak, backgroundColor: p.blue, borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: gridOps, y: gridOps } }
+            });
+
+            // 5. Split
+            makeChart('ch-split', {
+                type: 'doughnut',
+                data: {
+                    labels: lang === 'en' ? ['Gaming', 'Food'] : ['اللعب', 'المشروبات والطلبات'],
+                    datasets: [{ data: [d.gameTot, d.foodTot], backgroundColor: [p.purple, p.amber], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } } }
+            });
+
+            // 6. Duration
+            makeChart('ch-dur', {
+                type: 'bar',
+                data: {
+                    labels: lang === 'en' ? EN_DUR : AR_DUR,
+                    datasets: [{ data: d.bins, backgroundColor: p.green, borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: gridOps, y: gridOps } }
+            });
+        }
+
+        // Boot
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.getElementById('lang-toggle').textContent = lang === 'en' ? 'العربية' : 'English';
+        document.querySelectorAll('[data-en]').forEach(el => { el.textContent = el.getAttribute(`data-${lang}`); });
+        
+        setTimeout(() => setDefaultDates(), 100);
+
+    </script>
+</body>
+</html>
